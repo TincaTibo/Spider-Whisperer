@@ -1,0 +1,15 @@
+{
+  "name": "spider-whisperer",
+  "version": "0.0.1",
+  "description": "Packet capture for spider app",
+  "author": "Thibaut Raballand <tincatibo@gmail.com>",
+  "license": "Apache-2.0",
+  "main": "./whisperer",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tincatibo/Spider-Whisperer.git"
+  },
+  "dependencies": {
+    "pcap": ">=2.0.0"
+  }
+}
