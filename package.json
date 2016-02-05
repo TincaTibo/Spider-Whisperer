@@ -10,6 +10,7 @@
     "url": "git://github.com/tincatibo/Spider-Whisperer.git"
   },
   "dependencies": {
+    "debug": "^2.2.0",
     "pcap": ">=2.0.0"
   }
 }

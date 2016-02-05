@@ -1,5 +1,10 @@
-const fs = require('fs');
+//const fs = require('fs');
+const http = require('http');
+const zlib = require('zlib');
+var debug = require('debug')('sender');
 
+
+//TODO: change to closure
 var Sender = function (link_type){
     this.link_type = link_type;
     this.globalHeader = null;
@@ -24,14 +29,48 @@ var Sender = function (link_type){
     this.globalHeader.writeUInt32LE(this.dataLinksTypes[this.link_type],20); //Datalink
 
     this.i = 0;
+
+    //Export to Spider-Pack
+    this.options = {
+        hostname: 'localhost',
+        port: 3000,
+        path: '/packets/v1',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/vnd.tcpdump.pcap',
+            'Content-Encoding': 'gzip'
+        }
+    };
 };
 
-Sender.prototype.send = function (bf,bytes) {
+Sender.prototype.send = function (bf) {
     var globalHeader = this.globalHeader;
-    var fileName = "output-" + this.i++ + ".pcap";
-    console.log(fileName + ": Got " + bytes + " bytes to send. So a pcap file of " + (bytes + globalHeader.length) + " bytes.");
+    var fileName = `output-${this.i++}.pcap`;
+    debug(`${fileName}: Got ${bf.length} bytes to send. So a pcap file of ${bf.length + globalHeader.length} bytes.`);
 
-    //Pcap file opening
+    var req = http.request(this.options, (res) => {
+        debug(`STATUS: ${res.StatusCode}`);
+    });
+    req.on('error', (err) => {
+        console.log(`problem with request: ${er.message}`);
+    });
+    req.setTimeout(2000, ()=> {
+        debug('Request timed out');
+    });
+    zlib.gzip(bf, (err, zbf) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            this.options.headers['Content-Length'] = zbf.length;
+            req.write(zbf);
+            req.end();
+        }
+    });
+};
+
+Sender.prototype.sendtoFile = function (bf) {
+    //Export to file
     fs.open(fileName, 'w', function (err,fd) {
         if (err) throw err;
 
@@ -40,7 +79,7 @@ Sender.prototype.send = function (bf,bytes) {
             if (err) throw err;
 
             //Packets writing
-            fs.write(fd, bf, 0, bytes, written, function (err, written, buffer) {
+            fs.write(fd, bf, 0, bf.length, written, function (err, written, buffer) {
                 if (err) throw err;
 
                 //Close file at the end of buffer
