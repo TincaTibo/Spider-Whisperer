@@ -1,4 +1,4 @@
-//const fs = require('fs');
+const fs = require('fs');
 const http = require('http');
 const zlib = require('zlib');
 var debug = require('debug')('sender');
@@ -30,7 +30,7 @@ var Sender = function (link_type){
 
     this.i = 0;
 
-    //Export to Spider-Pack
+    //Options to export to Spider-Pack
     this.options = {
         hostname: 'localhost',
         port: 3000,
@@ -41,12 +41,12 @@ var Sender = function (link_type){
             'Content-Encoding': 'gzip'
         }
     };
+
 };
 
 Sender.prototype.send = function (bf) {
-    var globalHeader = this.globalHeader;
-    var fileName = `output-${this.i++}.pcap`;
-    debug(`${fileName}: Got ${bf.length} bytes to send. So a pcap file of ${bf.length + globalHeader.length} bytes.`);
+    //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
+    var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 
     var req = http.request(this.options, (res) => {
         debug(`STATUS: ${res.StatusCode}`);
@@ -57,7 +57,7 @@ Sender.prototype.send = function (bf) {
     req.setTimeout(2000, ()=> {
         debug('Request timed out');
     });
-    zlib.gzip(bf, (err, zbf) => {
+    zlib.gzip(bfToSend, (err, zbf) => {
         if (err) {
             console.log(err);
         }
@@ -69,7 +69,7 @@ Sender.prototype.send = function (bf) {
     });
 };
 
-Sender.prototype.sendtoFile = function (bf) {
+Sender.prototype.sendToFile = function (bf) {
     //Export to file
     fs.open(fileName, 'w', function (err,fd) {
         if (err) throw err;
