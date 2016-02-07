@@ -4,8 +4,9 @@
  */
 
 var pcap = require('pcap');
-var Sender = require('./sender');
 var debug = require('debug')('whisperer');
+var packetBuffers = require ('./packetBuffers');
+
 var pcap_session, config = {};
 
 function privs_check() {
@@ -32,6 +33,8 @@ function get_config() {
     //Buffer of bytes used to buffer send
     config.sendBufferSizekB = '100';
     config.sendBufferDelaySec = '10';
+    config.dumpToFile = false;
+    config.fileBufferSizekB = '1000';
 }
 
 function start_drop_watcher() {
@@ -50,48 +53,35 @@ function start_drop_watcher() {
 
 function setup_listeners() {
     //Initialize buffer for sending packets over the network
-    const sendBuffer = new Buffer(config.sendBufferSizekB*1024);
-    const sendBufferLen = sendBuffer.length;
-    var bytesInSendBuffer = 0;
+    var bufferWeb = new packetBuffers.WebBuffer(pcap_session.link_type, config.sendBufferSizekB, config.sendBufferDelaySec);
 
-    var sender = new Sender(pcap_session.link_type);
-    function send(){
-        sender.send(new Buffer(sendBuffer).slice(0,bytesInSendBuffer));
-        bytesInSendBuffer = 0;
+    //If we want to log also to file
+    var bufferFile;
+    if(config.dumpToFile) {
+        bufferFile = new packetBuffers.FileBuffer(pcap_session.link_type, config.fileBufferSizekB);
     }
 
-    //Set timeout for sending buffer if not enough packets (but still some)
-    var interval_send = setInterval(function () {
-        if(bytesInSendBuffer){
-            send();
-        }
-    },config.sendBufferDelaySec * 1000);
-
     pcap_session.on('packet', function (raw_packet) {
-        //Get packet size
-        var psize=raw_packet.header.readUInt32LE(8, true);
-        //If adding it to buffer would get an overflow, send buffer and clear buffer
-        if(bytesInSendBuffer + psize + raw_packet.header.length > sendBufferLen){
-            send();
+        bufferWeb.add(raw_packet);
+
+        if(config.dumpToFile) {
+            bufferFile.add(raw_packet);
         }
-        //Add to buffer
-        raw_packet.header.copy(sendBuffer,bytesInSendBuffer);
-        bytesInSendBuffer+=raw_packet.header.length;
-        raw_packet.buf.copy(sendBuffer,bytesInSendBuffer,0,psize-1);
-        bytesInSendBuffer+=psize;
     });
 
     pcap_session.on('complete', function () {
-        //If there are bytes to send, we send before leaving
-        if(bytesInSendBuffer){
-            send();
-            //Waiting for end of asyn calls
-            //TODO: Improve with real ending
-            setTimeout(function () {
-                pcap_session.close();
-                process.exit(0);
-            }, 1000);
+        bufferWeb.send();
+
+        if(config.dumpToFile) {
+            bufferFile.send();
         }
+
+        //Waiting for end of asyn calls
+        //TODO: Improve with real ending
+        setTimeout(function () {
+             pcap_session.close();
+             process.exit(0);
+        }, 1000);
     });
 }
 

@@ -1,17 +1,13 @@
 const fs = require('fs');
 const http = require('http');
 const zlib = require('zlib');
-var debug = require('debug')('sender');
+var debug = require('debug')('packetSenders');
 
+//TODO: Refactor with inheritance
 
-//TODO: change to closure
-var Sender = function (link_type){
-    this.link_type = link_type;
-    this.globalHeader = null;
-    this.dataLinksTypes = null;
-
+function createGlobalHeader(linkType){
     //For libpcap file format, see: https://wiki.wireshark.org/Development/LibpcapFileFormat
-    this.dataLinksTypes = {
+    var dataLinksTypes = {
         "LINKTYPE_NULL": 0, /* BSD loopback encapsulation */
         "LINKTYPE_ETHERNET": 1, /* Ethernet (10Mb) */
         "LINKTYPE_IEEE802_11_RADIO": 127,
@@ -19,16 +15,20 @@ var Sender = function (link_type){
         "LINKTYPE_LINUX_SLL": 113
     };
 
-    this.globalHeader = new Buffer(24); //Size of Libpcapfileformat globalheader
-    this.globalHeader.writeUInt32LE(0xa1b2c3d4,0); //Magicnumber for nanosecond resolution files (libpcap>1.5.0)
-    this.globalHeader.writeUInt16LE(2,4); //Major version of libpcap file format. Current: 2.4
-    this.globalHeader.writeUInt16LE(4,6); //Minor version
-    this.globalHeader.writeInt32LE(0,8); //Timestamps are in GMT, so 0
-    this.globalHeader.writeUInt32LE(0,12); //Time precision
-    this.globalHeader.writeUInt32LE(65535,16); //Max size of packets
-    this.globalHeader.writeUInt32LE(this.dataLinksTypes[this.link_type],20); //Datalink
+    var buf = new Buffer(24); //Size of Libpcapfileformat globalheader
+    buf.writeUInt32LE(0xa1b2c3d4,0); //Magicnumber for nanosecond resolution files (libpcap>1.5.0)
+    buf.writeUInt16LE(2,4); //Major version of libpcap file format. Current: 2.4
+    buf.writeUInt16LE(4,6); //Minor version
+    buf.writeInt32LE(0,8); //Timestamps are in GMT, so 0
+    buf.writeUInt32LE(0,12); //Time precision
+    buf.writeUInt32LE(65535,16); //Max size of packets
+    buf.writeUInt32LE(dataLinksTypes[linkType],20); //Datalink
 
-    this.i = 0;
+    return buf;
+}
+
+var WebSender = function (linkType){
+    this.globalHeader = createGlobalHeader(linkType);
 
     //Options to export to Spider-Pack
     this.options = {
@@ -41,10 +41,9 @@ var Sender = function (link_type){
             'Content-Encoding': 'gzip'
         }
     };
-
 };
 
-Sender.prototype.send = function (bf) {
+WebSender.prototype.send = function (bf) {
     //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
     var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 
@@ -69,8 +68,18 @@ Sender.prototype.send = function (bf) {
     });
 };
 
-Sender.prototype.sendToFile = function (bf) {
+var FileSender = function (linkType){
+    this.globalHeader = createGlobalHeader(linkType);
+
+    this.i = 0;
+};
+
+
+FileSender.prototype.send = function (bf) {
     //Export to file
+    var fileName = `./logs/output-${this.i++}.pcap`;
+    var globalHeader = this.globalHeader;
+
     fs.open(fileName, 'w', function (err,fd) {
         if (err) throw err;
 
@@ -92,4 +101,5 @@ Sender.prototype.sendToFile = function (bf) {
     });
 };
 
-module.exports = Sender;
+exports.WebSender = WebSender;
+exports.FileSender = FileSender;
