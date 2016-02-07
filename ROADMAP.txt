@@ -1,5 +1,6 @@
 # Roadmap
 
+o More refactor buffers & senders
 o Get configuration from conf server
 o Minimum parsing of packets to track TCP sessions membership in Whisperer
     * Id packet : ./whisperer/{token}/timestamp/source/dest
@@ -14,7 +15,6 @@ o Minimum parsing of packets to track TCP sessions membership in Whisperer
         - whisperer
 o Send TCP sessions every X s
 o What about sessionless packets?
-x Have a activatable sendToFile in // with different parameters
 o Have a local DNS cache valid for 1 hour (conf) and send the hostnames to server for every change
 o HealthCheck
 o Authent
