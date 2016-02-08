@@ -1,7 +1,5 @@
 # Roadmap
 
-o More refactor buffers & senders
-o Get configuration from conf server
 o Minimum parsing of packets to track TCP sessions membership in Whisperer
     * Id packet : ./whisperer/{token}/timestamp/source/dest
         - Client as port between 49152 and 65535
@@ -14,6 +12,7 @@ o Minimum parsing of packets to track TCP sessions membership in Whisperer
         - dest ip:port
         - whisperer
 o Send TCP sessions every X s
+o Get configuration from conf server
 o What about sessionless packets?
 o Have a local DNS cache valid for 1 hour (conf) and send the hostnames to server for every change
 o HealthCheck
