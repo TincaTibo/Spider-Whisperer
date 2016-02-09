@@ -24,7 +24,7 @@ function start_capture_session() {
         config.f = 'ip proto \\tcp';
     }
     //pcap_session = pcap.createSession(config.interface, config.filter, (config.captureBuffer * 1024 * 1024));
-    pcap_session = pcap.createOfflineSession('./test/test-1reqHTTP.pcap', config.filter);
+    pcap_session = pcap.createOfflineSession('./test/test-nreqHTTP.pcap', config.filter);
     console.log('Listening on ' + pcap_session.device_name);
 }
 
@@ -63,7 +63,7 @@ function setup_listeners() {
         bufferFile = new BufferedOutput(new packetSenders.FileSender(pcap_session.link_type), {sizeKB : config.fileBufferSizekB});
     }
 
-    var tcpTracker = new TcpTracker();
+    var tcpTracker = new TcpTracker({delaySec: 2});
     var packetId, packet;
 
     pcap_session.on('packet', function (raw_packet) {
@@ -86,6 +86,8 @@ function setup_listeners() {
             bufferFile.send();
         }
 
+        tcpTracker.send();
+
         //Waiting for end of asyn calls
         //TODO: Improve with real ending
         setTimeout(function () {
@@ -94,7 +96,6 @@ function setup_listeners() {
         }, 1000);
     });
 }
-
 
 // Start the program
 get_config();
