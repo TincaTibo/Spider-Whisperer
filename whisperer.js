@@ -74,7 +74,6 @@ function setup_listeners() {
             bufferFile.add(raw_packet);
         }
 
-        console.log(packetId);
         tcpTracker.trackPacket(packet, packetId);
 
     });

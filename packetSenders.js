@@ -45,16 +45,18 @@ var WebSender = function (linkType){
 
 WebSender.prototype.send = function (bf) {
     //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
+    console.log(`Sending ${bf.length} bytes of packets.`);
+
     var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 
     var req = http.request(this.options, (res) => {
-        debug(`STATUS: ${res.StatusCode}`);
+        console.log(`/packets: ResponseStatus: ${res.statusCode}`);
     });
     req.on('error', (err) => {
-        console.log(`problem with request: ${er.message}`);
+        console.log(`/packets: Problem with request: ${er.message}`);
     });
     req.setTimeout(2000, ()=> {
-        debug('Request timed out');
+        console.log('/packets: Request timed out');
     });
     zlib.gzip(bfToSend, (err, zbf) => {
         if (err) {

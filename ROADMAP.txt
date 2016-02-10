@@ -1,16 +1,6 @@
 # Roadmap
 
-o Minimum parsing of packets to track TCP sessions membership in Whisperer
-    * Id packet : ./whisperer/{token}/timestamp/source/dest
-        - Client as port between 49152 and 65535
-    * Id session: id of first SYN packet or a GUID?
-    * Session:
-        - start
-        - end (?)
-        - size in/out
-        - source ip:port
-        - dest ip:port
-        - whisperer
+x Minimum parsing of packets to track TCP sessions membership in Whisperer
 o Send TCP sessions every X s
 o Get configuration from conf server
 o What about sessionless packets?

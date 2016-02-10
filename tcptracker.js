@@ -1,3 +1,5 @@
+const http = require('http');
+const zlib = require('zlib');
 var IPv4 = require("pcap/decode/ipv4");
 var TCP = require("pcap/decode/tcp");
 
@@ -12,10 +14,23 @@ function TcpTracker(options){
         //And to remove sessions from memory when closed and sent
         this.interval_send = setInterval(function () {
             if(this.updated){
+                this.updated = false;
                 this.send();
             }
         }, options.delaySec * 1000);
     }
+
+    //Options to export to Spider-Tcp
+    this.options = {
+        hostname: 'localhost',
+        port: 3001,
+        path: '/tcp-sessions/v1',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Encoding': 'gzip'
+        }
+    };
 }
 
 var OPENED = Symbol('OPENED');
@@ -162,14 +177,42 @@ TcpTracker.prototype.send = function () {
     var sessionsToDelete = new Array();
     var date = new Date();
 
+    console.log(`Sending ${this.sessions.size} sessions.`);
+
+    var sessionsToSend = new Object();
+    //Detect sessions to delete
     this.sessions.forEach((session, id) => {
         if (session.state === RESET || session.state === FIN || (date - session.lastUpdate > this.sessionTimeOut * 1000)){
             sessionsToDelete.push(id);
         }
+        sessionsToSend[id]={
+            state: session.state.toString(),
+            inPackets: session.inPackets,
+            outPackets: session.outPackets,
+            lastUpdate: session.lastUpdate.toISOString()
+        };
     }, this);
 
-    //TODO: send sessions to server (create / update)
-    console.log(this.sessions);
+    //Send sessions to server
+    var req = http.request(this.options, (res) => {
+        console.log(`/tcp-sessions: ResponseStatus: ${res.statusCode}`);
+    });
+    req.on('error', (err) => {
+        console.log(`/tcp-sessions:Problem with request: ${err.message}`);
+    });
+    req.setTimeout(2000, ()=> {
+        console.log('/tcp-sessions:Request timed out');
+    });
+    zlib.gzip(JSON.stringify(sessionsToSend), (err, zbf) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            this.options.headers['Content-Length'] = zbf.length;
+            req.write(zbf);
+            req.end();
+        }
+    });
 
     //delete sessions that are closed AND sent
     sessionsToDelete.forEach((id) => {this.sessions.delete(id)}, this);
