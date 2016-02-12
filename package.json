@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "pcap": ">=2.0.0"
+    "pcap": "git+https://github.com/mranney/node_pcap.git"
   }
 }

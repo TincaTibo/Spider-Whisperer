@@ -30,6 +30,10 @@ function createGlobalHeader(linkType){
 var WebSender = function (linkType){
     this.globalHeader = createGlobalHeader(linkType);
 
+    this.agent = new http.Agent({
+        keepAlive: true,
+    });
+
     //Options to export to Spider-Pack
     this.options = {
         hostname: 'localhost',
@@ -39,7 +43,8 @@ var WebSender = function (linkType){
         headers: {
             'Content-Type': 'application/vnd.tcpdump.pcap',
             'Content-Encoding': 'gzip'
-        }
+        },
+        agent: this.agent
     };
 };
 
@@ -49,25 +54,25 @@ WebSender.prototype.send = function (bf) {
 
     var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 
-    var req = http.request(this.options, (res) => {
-        console.log(`/packets: ResponseStatus: ${res.statusCode}`);
-    });
-    req.on('error', (err) => {
-        console.log(`/packets: Problem with request: ${er.message}`);
-    });
-    req.setTimeout(2000, ()=> {
-        console.log('/packets: Request timed out');
-    });
+    // zip
     zlib.gzip(bfToSend, (err, zbf) => {
         if (err) {
             console.log(err);
         }
         else {
             this.options.headers['Content-Length'] = zbf.length;
-            req.write(zbf);
-            req.end();
+
+            var req = http.request(this.options, (res) => {
+                console.log(`/packets: ResponseStatus: ${res.statusCode}`);
+            });
+            req.on('error', (err) => {
+                console.log(`/packets: Problem with request: ${err.message}`);
+            });
+            req.setTimeout(2000);
+            req.end(zbf);
         }
     });
+
 };
 
 var FileSender = function (linkType){

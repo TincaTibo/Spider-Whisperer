@@ -29,14 +29,16 @@ function start_capture_session() {
 }
 
 function get_config() {
-    config.interface = 'eth0';
+    config.interface = 'wlan0';
     config.filter = 'tcp port 80';
-    config.captureBuffer = '10';
+    config.captureBuffer = 10;
     //Buffer of bytes used to buffer send
-    config.sendBufferSizekB = '100';
-    config.sendBufferDelaySec = '10';
+    config.sendBufferSizekB = 100;
+    config.sendBufferDelaySec = 5;
+    config.sendSessionDelaySec = 5;
+    config.sessionTimeOutSec = 600;
     config.dumpToFile = false;
-    config.fileBufferSizekB = '1000';
+    config.fileBufferSizekB = 1000;
 }
 
 function start_drop_watcher() {
@@ -63,7 +65,10 @@ function setup_listeners() {
         bufferFile = new BufferedOutput(new packetSenders.FileSender(pcap_session.link_type), {sizeKB : config.fileBufferSizekB});
     }
 
-    var tcpTracker = new TcpTracker({delaySec: 2});
+    var tcpTracker = new TcpTracker({
+        delaySec: config.sendSessionDelaySec,
+        sessionTimeOutSec : config.sessionTimeOutSec
+    });
     var packetId, packet;
 
     pcap_session.on('packet', function (raw_packet) {
@@ -92,7 +97,7 @@ function setup_listeners() {
         setTimeout(function () {
              pcap_session.close();
              process.exit(0);
-        }, 1000);
+        }, 2000);
     });
 }
 

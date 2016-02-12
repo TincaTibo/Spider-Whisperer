@@ -9,11 +9,11 @@ var BufferedOutput = function (sender, options){
 
     if(options.delaySec){
         //Set timeout for sending buffer if not enough packets (but still some)
-        this.interval_send = setInterval(function () {
-            if(this.bytes){
-                this.send();
+        this.interval_send = setInterval(function (that) {
+            if(that.bytes){
+                that.send();
             }
-        }, options.delaySec * 1000);
+        }, options.delaySec * 1000, this);
     }
 }
 

@@ -7,18 +7,27 @@ function TcpTracker(options){
     this.sessions = new Map;
     this.updated = false;
     this.sessionTimeOutSec = options.sessionTimeOutSec ? options.sessionTimeOutSec : 600; //a session without packets for 10 minutes is deleted
+    this.stats = {
+        nbPacketsTracked: 0,
+        nbPacketsNotTCP:0,
+        nbPacketsOutsideSessions:0,
+    };
 
     if(options.delaySec){
         //Set timeout for sending sessions regularly to the server
         //If changed
         //And to remove sessions from memory when closed and sent
-        this.interval_send = setInterval(function () {
-            if(this.updated){
-                this.updated = false;
-                this.send();
+        this.interval_send = setInterval(function (that) {
+            if(that.updated){
+                that.updated = false;
+                that.send();
             }
-        }, options.delaySec * 1000);
+        }, options.delaySec * 5000, this);
     }
+
+    this.agent = new http.Agent({
+        keepAlive: true,
+    });
 
     //Options to export to Spider-Tcp
     this.options = {
@@ -29,19 +38,22 @@ function TcpTracker(options){
         headers: {
             'Content-Type': 'application/json',
             'Content-Encoding': 'gzip'
-        }
+        },
+        agent: this.agent
     };
 }
 
-var OPENED = Symbol('OPENED');
-var RESET = Symbol('RESET');
-var FIN = Symbol('FIN');
-var SYN = Symbol('SYN');
-var FINASK = Symbol('FINASK');
+var OPENED = 'OPENED';
+var RESET = 'RESET';
+var FIN = 'FIN';
+var SYN = 'SYN';
+var FINASK = 'FINASK';
 
 //Adds a packet in a TcpSession to associate them together.
 //Not possible to do it with performance on the server side with distributed processing
 TcpTracker.prototype.trackPacket = function (packet, packetId) {
+
+    this.stats.nbPacketsTracked++;
 
     //only for TCP / IPV4 for now
     if (packet.payload.payload instanceof IPv4 && packet.payload.payload.payload instanceof TCP) {
@@ -166,9 +178,13 @@ TcpTracker.prototype.trackPacket = function (packet, packetId) {
             this.updated = true;
             this.sessions.get(di).lastUpdate = new Date();
         }
+        else {
+            this.stats.nbPacketsOutsideSessions++;
+        }
     }
     else {
         //ignore any non IPv4 TCP packets
+        this.stats.nbPacketsNotTCP++;
     }
 }
 
@@ -186,36 +202,35 @@ TcpTracker.prototype.send = function () {
             sessionsToDelete.push(id);
         }
         sessionsToSend[id]={
-            state: session.state.toString(),
+            state: session.state,
             inPackets: session.inPackets,
             outPackets: session.outPackets,
             lastUpdate: session.lastUpdate.toISOString()
         };
     }, this);
 
-    //Send sessions to server
-    var req = http.request(this.options, (res) => {
-        console.log(`/tcp-sessions: ResponseStatus: ${res.statusCode}`);
-    });
-    req.on('error', (err) => {
-        console.log(`/tcp-sessions:Problem with request: ${err.message}`);
-    });
-    req.setTimeout(2000, ()=> {
-        console.log('/tcp-sessions:Request timed out');
-    });
     zlib.gzip(JSON.stringify(sessionsToSend), (err, zbf) => {
         if (err) {
             console.log(err);
         }
         else {
-            this.options.headers['Content-Length'] = zbf.length;
-            req.write(zbf);
-            req.end();
+            this.options.headers['Content-Length']=zbf.length;
+            //Send sessions to server
+            var req = http.request(this.options, (res) => {
+                console.log(`/tcp-sessions: ResponseStatus: ${res.statusCode}`);
+            });
+            req.on('error', (err) => {
+                console.log(`/tcp-sessions:Problem with request: ${err.message}`);
+            });
+            req.setTimeout(2000);
+            req.end(zbf);
         }
     });
 
+    console.log(`Deleting ${sessionsToDelete.length} closed sessions.`);
     //delete sessions that are closed AND sent
     sessionsToDelete.forEach((id) => {this.sessions.delete(id)}, this);
+    console.log(`Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
 }
 
 function TcpSession(){
