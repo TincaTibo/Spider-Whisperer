@@ -50,7 +50,7 @@ var WebSender = function (linkType){
 
 WebSender.prototype.send = function (bf) {
     //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
-    console.log(`Sending ${bf.length} bytes of packets.`);
+    console.log(`/packets: Sending ${bf.length} bytes of packets.`);
 
     var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 

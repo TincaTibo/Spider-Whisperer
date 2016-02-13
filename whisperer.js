@@ -36,7 +36,7 @@ function get_config() {
     config.sendBufferSizekB = 100;
     config.sendBufferDelaySec = 5;
     config.sendSessionDelaySec = 5;
-    config.sessionTimeOutSec = 600;
+    config.sessionTimeOutSec = 120;
     config.dumpToFile = false;
     config.fileBufferSizekB = 1000;
 }

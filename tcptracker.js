@@ -6,7 +6,8 @@ var TCP = require("pcap/decode/tcp");
 function TcpTracker(options){
     this.sessions = new Map;
     this.updated = false;
-    this.sessionTimeOutSec = options.sessionTimeOutSec ? options.sessionTimeOutSec : 600; //a session without packets for 10 minutes is deleted
+    this.lastSentDate = new Date();
+    this.sessionTimeOutSec = options.sessionTimeOutSec ? options.sessionTimeOutSec : 120; //a session without packets for 2 minutes is deleted
     this.stats = {
         nbPacketsTracked: 0,
         nbPacketsNotTCP:0,
@@ -190,24 +191,26 @@ TcpTracker.prototype.trackPacket = function (packet, packetId) {
 
 //Send sessions to server and remove oldest
 TcpTracker.prototype.send = function () {
-    var sessionsToDelete = new Array();
-    var date = new Date();
-
-    console.log(`Sending ${this.sessions.size} sessions.`);
-
+    var currentDate = new Date();
     var sessionsToSend = new Object();
+    var sessionsToDelete = new Array();
+
     //Detect sessions to delete
     this.sessions.forEach((session, id) => {
-        if (session.state === RESET || session.state === FIN || (date - session.lastUpdate > this.sessionTimeOut * 1000)){
+        if (session.state === RESET || session.state === FIN || (currentDate - session.lastUpdate > this.sessionTimeOut * 1000)){
             sessionsToDelete.push(id);
         }
-        sessionsToSend[id]={
-            state: session.state,
-            inPackets: session.inPackets,
-            outPackets: session.outPackets,
-            lastUpdate: session.lastUpdate.toISOString()
-        };
+        if (session.lastUpdate >= this.lastSentDate) {
+            sessionsToSend[id] = {
+                state: session.state,
+                inPackets: session.inPackets,
+                outPackets: session.outPackets,
+                lastUpdate: session.lastUpdate.toISOString()
+            };
+        }
     }, this);
+
+    console.log(`/tcp-sessions: Sending ${Object.keys(sessionsToSend).length} sessions out of ${this.sessions.size}.`);
 
     zlib.gzip(JSON.stringify(sessionsToSend), (err, zbf) => {
         if (err) {
@@ -227,12 +230,15 @@ TcpTracker.prototype.send = function () {
         }
     });
 
-    console.log(`Deleting ${sessionsToDelete.length} closed sessions.`);
+    console.log(`/tcp-sessions: Deleting ${sessionsToDelete.length} closed sessions.`);
     //delete sessions that are closed AND sent
     sessionsToDelete.forEach((id) => {this.sessions.delete(id)}, this);
-    console.log(`Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
+    console.log(`/tcp-sessions: Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
+
+    this.lastSentDate = currentDate;
 }
 
+//Sessions tracked in memory. Not quite the same as the ones sent to the server.
 function TcpSession(){
     this.state = null;
     this.inPackets = new Array();
