@@ -1,7 +1,7 @@
 # Roadmap
 
 x Minimum parsing of packets to track TCP sessions membership in Whisperer
-o Send TCP sessions every X s
+x Send TCP sessions every X s
 o Get configuration from conf server
 o What about sessionless packets?
 o Have a local DNS cache valid for 1 hour (conf) and send the hostnames to server for every change
