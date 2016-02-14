@@ -5,9 +5,9 @@
 
 var pcap = require('pcap');
 var debug = require('debug')('whisperer');
-var BufferedOutput = require('./bufferedoutput');
-var packetSenders = require('./packetSenders');
-var TcpTracker = require('./tcptracker');
+var BufferedOutput = require('./lib/bufferedoutput');
+var packetSenders = require('./lib/packetSenders');
+var TcpTracker = require('./lib/tcptracker');
 
 var pcap_session, config = {};
 
@@ -24,7 +24,7 @@ function start_capture_session() {
         config.f = 'ip proto \\tcp';
     }
     //pcap_session = pcap.createSession(config.interface, config.filter, (config.captureBuffer * 1024 * 1024));
-    pcap_session = pcap.createOfflineSession('./test/test-nreqHTTP.pcap', config.filter);
+    pcap_session = pcap.createOfflineSession('../test/test-nreqHTTP.pcap', config.filter);
     console.log('Listening on ' + pcap_session.device_name);
 }
 
