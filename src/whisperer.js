@@ -29,16 +29,19 @@ function start_capture_session() {
 }
 
 function get_config() {
-    config.interface = 'wlan0';
-    config.filter = 'tcp port 80';
-    config.captureBuffer = 10;
-    //Buffer of bytes used to buffer send
-    config.sendBufferSizekB = 100;
-    config.sendBufferDelaySec = 5;
-    config.sendSessionDelaySec = 5;
-    config.sessionTimeOutSec = 120;
-    config.dumpToFile = false;
-    config.fileBufferSizekB = 1000;
+    return {
+        interface : 'wlan0',
+        filter : 'tcp port 80',
+        captureBuffer : 10,
+        sendBufferSizekB : 100,
+        sendBufferDelaySec : 5,
+        sendSessionDelaySec : 5,
+        sessionTimeOutSec : 120,
+        dumpToFile : false,
+        fileBufferSizekB : 1000,
+        spiderPackURI : 'http://localhost:3000/packets/v1',
+        spiderPackTimeout: 2000
+    }
 }
 
 function start_drop_watcher() {
@@ -57,7 +60,7 @@ function start_drop_watcher() {
 
 function setup_listeners() {
     //Initialize buffer for sending packets over the network
-    var bufferWeb = new BufferedOutput(new packetSenders.WebSender(pcap_session.link_type), {sizeKB : config.sendBufferSizekB, delaySec: config.sendBufferDelaySec});
+    var bufferWeb = new BufferedOutput(new packetSenders.WebSender(config, pcap_session.link_type), {sizeKB : config.sendBufferSizekB, delaySec: config.sendBufferDelaySec});
 
     //If we want to log also to file
     var bufferFile;

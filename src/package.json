@@ -10,7 +10,9 @@
     "url": "git://github.com/tincatibo/Spider-Whisperer.git"
   },
   "dependencies": {
+    "async": "^1.5.2",
     "debug": "^2.2.0",
-    "pcap": "git+https://github.com/mranney/node_pcap.git"
+    "pcap": "git+https://github.com/mranney/node_pcap.git",
+    "request": "^2.69.0"
   }
 }
