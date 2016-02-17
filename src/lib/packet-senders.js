@@ -1,11 +1,18 @@
+/**
+ * Module defining packet sending logic for Whisperer {@link http://spider.io}
+ * @module lib/packet-senders
+ * @author TincaTibo@gmail.com
+ * @type {exports|module.exports}
+ */
+
 const fs = require('fs');
 const http = require('http');
 const zlib = require('zlib');
 var request = require('request');
 var async = require('async');
-var debug = require('debug')('/packets:');
+var debug = require('debug')('packet-senders');
 
-//TODO: Refactor with inheritance
+//TODO: Refactor with inheritance and 3 different files: packet-sender / websender / filesender
 /**
  * Create Pcap file header for exports
  * See: https://wiki.wireshark.org/Development/LibpcapFileFormat
@@ -36,6 +43,7 @@ function createGlobalHeader(linkType){
 /**
  * Object to send packets on the web to Spider server
  * @param {string} linkType - Link-type detected by libpcap and transcoded by node-pcap
+ * @param {WhispererConfig} config
  * @constructor
  */
 var WebSender = function (linkType, config){
@@ -44,13 +52,14 @@ var WebSender = function (linkType, config){
     //Options to export to Spider-Pack
     this.options = {
         method: 'POST',
-        uri: config.spiderPackURI,
+        uri: config.packets.spiderPackURI,
         headers: {
             'Content-Type': 'application/vnd.tcpdump.pcap',
+            'Content-Encoding': 'gzip'
         },
         gzip: true,
         time: true, //monitors the request
-        timeout: config.spiderPackTimeout //ms
+        timeout: config.packets.spiderPackTimeout //ms
     };
 };
 
@@ -61,7 +70,7 @@ var WebSender = function (linkType, config){
  */
 WebSender.prototype.send = function (bf) {
     //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
-    debug(`/packets: Sending ${bf.length} bytes of packets.`);
+    debug(`Sending ${bf.length} bytes of packets.`);
 
     var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
 

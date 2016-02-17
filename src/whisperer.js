@@ -1,84 +1,88 @@
 #!/usr/bin/env node
 /**
- * Created by tibo on 30/01/16.
+ * Created by TincaTibo on 30/01/16.
+ * @author TincaTibo@gmail.com
+ * @version 0.1
  */
 
 var pcap = require('pcap');
 var debug = require('debug')('whisperer');
-var BufferedOutput = require('./lib/bufferedoutput');
-var packetSenders = require('./lib/packetSenders');
-var TcpTracker = require('./lib/tcptracker');
+var BufferedOutput = require('./lib/buffered-output');
+var packetSenders = require('./lib/packet-senders');
+var TcpTracker = require('./lib/tcp-sessions-tracker');
+var Config = require('./lib/config');
 
-var pcap_session, config = {};
-
-function privs_check() {
+/**
+ * Checks privilege of current run, since often raw capture is limited to root
+ */
+function privsCheck() {
     if (process.getuid() !== 0) {
         console.log('Warning: not running with root privs, which are usually required for raw packet capture.');
         process.exit(0);
     }
 }
 
-function start_capture_session() {
+/**
+ * Start capture session
+ * @param {WhispererConfig} config - configuration for the program as fetched from the server
+ * @returns {PcapSession}
+ */
+function startCaptureSession(config) {
     if (! config.f) {
         // default filter is all IPv4 TCP, which is all we know how to decode right now anyway
         config.f = 'ip proto \\tcp';
     }
-    //pcap_session = pcap.createSession(config.interface, config.filter, (config.captureBuffer * 1024 * 1024));
-    pcap_session = pcap.createOfflineSession('../test/test-nreqHTTP.pcap', config.filter);
-    console.log('Listening on ' + pcap_session.device_name);
+    var pcapSession;
+    //pcapSession = pcap.createSession(config.capture.interface, config.capture.filter, (config.capture.captureBufferkB * 1024 * 1024));
+    pcapSession = pcap.createOfflineSession('../test/test-nreqHTTP.pcap', config.capture.filter);
+    console.log('Listening on ' + pcapSession.device_name);
+    return pcapSession;
 }
 
-function get_config() {
-    return {
-        interface : 'wlan0',
-        filter : 'tcp port 80',
-        captureBuffer : 10,
-        sendBufferSizekB : 100,
-        sendBufferDelaySec : 5,
-        sendSessionDelaySec : 5,
-        sessionTimeOutSec : 120,
-        dumpToFile : false,
-        fileBufferSizekB : 1000,
-        spiderPackURI : 'http://localhost:3000/packets/v1',
-        spiderPackTimeout: 2000
-    }
-}
-
-function start_drop_watcher() {
+/**
+ * Start monitoring watcher
+ * Checks the status of packets drop
+ * TODO : Bring the knowledge back to Spider
+ */
+function startDropWatcher(pcapSession) {
     // Check for pcap dropped packets on an interval
     var first_drop = setInterval(function () {
-        var stats = pcap_session.stats();
+        var stats = pcapSession.stats();
+
         if (stats && stats.ps_drop > 0) {
-            console.log('pcap dropped packets, need larger buffer or less work to do: ' + JSON.stringify(stats));
+            debug('pcap dropped packets, need larger buffer or less work to do: ' + JSON.stringify(stats));
             clearInterval(first_drop);
             setInterval(function () {
-                console.log('pcap dropped packets: ' + JSON.stringify(stats));
+                debug('pcap dropped packets: ' + JSON.stringify(stats));
             }, 5000);
         }
     }, 1000);
 }
 
-function setup_listeners() {
+/**
+ * Setup the packet listener on pcap events to send packets
+ * to Spider or to file
+ * @param {PcapSession} pcapSession
+ * @param {WhispererConfig} config
+ */
+function startListeners(pcapSession, config) {
     //Initialize buffer for sending packets over the network
-    var bufferWeb = new BufferedOutput(new packetSenders.WebSender(config, pcap_session.link_type), {sizeKB : config.sendBufferSizekB, delaySec: config.sendBufferDelaySec});
+    var bufferWeb = new BufferedOutput(new packetSenders.WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
 
     //If we want to log also to file
     var bufferFile;
-    if(config.dumpToFile) {
-        bufferFile = new BufferedOutput(new packetSenders.FileSender(pcap_session.link_type), {sizeKB : config.fileBufferSizekB});
+    if(config.dumpPackets.dumpToFile) {
+        bufferFile = new BufferedOutput(new packetSenders.FileSender(pcapSession.link_type), {sizeKB : config.dumpPackets.fileBufferSizekB});
     }
 
-    var tcpTracker = new TcpTracker({
-        delaySec: config.sendSessionDelaySec,
-        sessionTimeOutSec : config.sessionTimeOutSec
-    });
+    var tcpTracker = new TcpTracker(config);
     var packetId, packet;
 
-    pcap_session.on('packet', function (raw_packet) {
+    pcapSession.on('packet', function (raw_packet) {
         packet = pcap.decode.packet(raw_packet);
         packetId = bufferWeb.add(raw_packet, packet);
 
-        if(config.dumpToFile) {
+        if(config.dumpPackets.dumpToFile) {
             bufferFile.add(raw_packet);
         }
 
@@ -86,10 +90,10 @@ function setup_listeners() {
 
     });
 
-    pcap_session.on('complete', function () {
+    pcapSession.on('complete', function () {
         bufferWeb.send();
 
-        if(config.dumpToFile) {
+        if(config.dumpPackets.dumpToFile) {
             bufferFile.send();
         }
 
@@ -98,15 +102,17 @@ function setup_listeners() {
         //Waiting for end of asyn calls
         //TODO: Improve with real ending
         setTimeout(function () {
-             pcap_session.close();
-             process.exit(0);
+            pcapSession.close();
+            process.exit(0);
         }, 2000);
     });
 }
 
-// Start the program
-get_config();
-privs_check();
-start_capture_session();
-start_drop_watcher();
-setup_listeners();
+// If privileges are ok
+privsCheck();
+
+// Start the capture
+var config = new Config().getConfig();
+var pcapSession = startCaptureSession(config);
+startDropWatcher(pcapSession);
+startListeners(pcapSession, config);

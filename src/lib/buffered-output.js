@@ -1,3 +1,15 @@
+/**
+ * Module for buffering packet output
+ * @author TincaTibo@gmail.com
+ * @module lib/buffered-output
+ */
+
+/**
+ * Create a buffer to bufferize output of pcap packets before sending to {@link BufferedOutput.sender} when buffer is bound to be full
+ * @param {PacketSender} sender
+ * @param {{sizeKB : ?number, delaySec : number}} options
+ * @constructor
+ */
 var BufferedOutput = function (sender, options){
     var sizeKB = options.sizeKB ? options.sizeKB : 100;
 
@@ -17,7 +29,10 @@ var BufferedOutput = function (sender, options){
     }
 }
 
-var send = function (){
+/**
+ * Actually flush the buffer to the {@link BufferedOutput.sender}
+ */
+BufferedOutput.prototype.send = function (){
     if(this.bytes) {
         this.sender.send(new Buffer(this.buf).slice(0, this.bytes));
         this.bytes = 0;
@@ -26,7 +41,13 @@ var send = function (){
     }
 }
 
-var add = function (raw_packet, packet){
+/**
+ * Add a packet to the buffer for sending (later)
+ * @param {Buffer} raw_packet - raw node-pcap packet
+ * @param {PcapPacket} packet - decoded packet
+ * @returns {string} - packet id to send to link in tcp-session and send to Spider
+ */
+BufferedOutput.prototype.add = function (raw_packet, packet){
     //Get packet size
     var psize=raw_packet.header.readUInt32LE(8, true);
 
@@ -50,9 +71,5 @@ var add = function (raw_packet, packet){
 
     return this.firstPacketTimestamp + '.' + this.item;
 }
-
-BufferedOutput.prototype.send = send;
-
-BufferedOutput.prototype.add = add;
 
 module.exports = BufferedOutput;
