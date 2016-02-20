@@ -8,9 +8,10 @@
 var pcap = require('pcap');
 var debug = require('debug')('whisperer');
 var BufferedOutput = require('./lib/buffered-output');
-var packetSenders = require('./lib/packet-senders');
+var WebSender = require('./lib/web-packet-sender');
+var FileSender = require('./lib/file-packet-sender');
 var TcpTracker = require('./lib/tcp-sessions-tracker');
-var Config = require('./lib/config');
+var Config = require('./config/config');
 
 /**
  * Checks privilege of current run, since often raw capture is limited to root
@@ -67,12 +68,12 @@ function startDropWatcher(pcapSession) {
  */
 function startListeners(pcapSession, config) {
     //Initialize buffer for sending packets over the network
-    var bufferWeb = new BufferedOutput(new packetSenders.WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
+    var bufferWeb = new BufferedOutput(new WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
 
     //If we want to log also to file
     var bufferFile;
     if(config.dumpPackets.dumpToFile) {
-        bufferFile = new BufferedOutput(new packetSenders.FileSender(pcapSession.link_type), {sizeKB : config.dumpPackets.fileBufferSizekB});
+        bufferFile = new BufferedOutput(new FileSender(pcapSession.link_type), {sizeKB : config.dumpPackets.fileBufferSizekB});
     }
 
     var tcpTracker = new TcpTracker(config);
