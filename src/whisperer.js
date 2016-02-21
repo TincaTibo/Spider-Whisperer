@@ -35,7 +35,7 @@ function startCaptureSession(config) {
     }
     var pcapSession;
     //pcapSession = pcap.createSession(config.capture.interface, config.capture.filter, (config.capture.captureBufferkB * 1024 * 1024));
-    pcapSession = pcap.createOfflineSession('../test/test-nreqHTTP.pcap', config.capture.filter);
+    pcapSession = pcap.createOfflineSession('../test/test-1session2reqHTTP.pcap', config.capture.filter);
     console.log('Listening on ' + pcapSession.device_name);
     return pcapSession;
 }

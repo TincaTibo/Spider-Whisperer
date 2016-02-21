@@ -8,18 +8,18 @@
 
 const http = require('http');
 const zlib = require('zlib');
-var request = require('request');
-var async = require('async');
-var debug = require('debug')('tcp-sessions-tracker');
+const request = require('request');
+const async = require('async');
+const debug = require('debug')('tcp-sessions-tracker');
 
-var IPv4 = require('pcap/decode/ipv4');
-var TCP = require('pcap/decode/tcp');
+const IPv4 = require('pcap/decode/ipv4');
+const TCP = require('pcap/decode/tcp');
 
-var OPENED = 'OPENED';
-var RESET = 'RESET';
-var FIN = 'FIN';
-var SYN = 'SYN';
-var FINASK = 'FINASK';
+const OPENED = 'OPENED';
+const RESET = 'RESET';
+const FIN = 'FIN';
+const SYN = 'SYN';
+const FINASK = 'FINASK';
 
 /**
  * Class to track tcp sessions
@@ -260,6 +260,14 @@ class TcpTracker{
             sessionsToDelete.forEach((id) => {
                 this.sessions.delete(id)
             }, this);
+
+            debug(`Emptying packets from sent sessions.`);
+            for(let id in sessionsToSend){
+                if(this.sessions.has(id)) {
+                    this.sessions.get(id).clearPackets();
+                }
+            }
+
             debug(`Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
 
             this.lastSentDate = currentDate;
@@ -310,6 +318,14 @@ class TcpSession{
         this[direction]['payload'] += packet.payload.payload.payload.dataLength;
 
         this.lastTimestamp = timeStamp;
+    }
+
+    /**
+     * Emptys packets array
+     */
+    clearPackets(){
+        this.in.packets.length = 0;
+        this.out.packets.length = 0;
     }
 }
 
