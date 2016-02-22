@@ -312,7 +312,11 @@ class TcpSession{
      * @param {string} packetId
      */
     add(direction, packet, packetId, timeStamp){
-        this[direction]['packets'].push(packetId);
+        this[direction]['packets'].push({
+            '@id': packetId,
+            tcpPayload: packet.payload.payload.payload.dataLength > 0,
+            timestamp: timeStamp
+        });
         this[direction]['ip'] += packet.payload.payload.headerLength;
         this[direction]['tcp'] += packet.payload.payload.payload.headerLength;
         this[direction]['payload'] += packet.payload.payload.payload.dataLength;
