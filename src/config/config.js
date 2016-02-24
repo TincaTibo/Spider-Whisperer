@@ -31,7 +31,7 @@ class WhispererConfig {
         //For packets
         this.packets = {};
         this.packets.spiderPackURI = 'http://localhost:3000/packets/v1';
-        this.packets.spiderPackTimeout = 2000
+        this.packets.spiderPackTimeout = 2000;
         //Packet saving to Spider
         this.packets.sendBufferSizekB = 100;
         this.packets.sendBufferDelaySec = 5;
@@ -45,7 +45,7 @@ class WhispererConfig {
         this.tcpSessions = {};
         this.tcpSessions.spiderTcpStreamsURI = 'http://localhost:3001/tcp-sessions/v1'
         this.tcpSessions.sendSessionDelaySec = 5;
-        this.tcpSessions.sessionTimeOutSec = 120
+        this.tcpSessions.sessionTimeOutSec = 120;
 
         whispererConfig = this;
     }
