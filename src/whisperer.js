@@ -98,14 +98,16 @@ function startListeners(pcapSession, config) {
             bufferFile.send();
         }
 
-        tcpTracker.send();
+        setTimeout(function () {
+            tcpTracker.send();
+        }, 1000);
 
         //Waiting for end of asyn calls
         //TODO: Improve with real ending
         setTimeout(function () {
             pcapSession.close();
             process.exit(0);
-        }, 2000);
+        }, 3000);
     });
 }
 
