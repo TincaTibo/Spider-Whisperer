@@ -70,7 +70,7 @@ class BufferedOutput {
         raw_packet.header.copy(this.buf, this.bytes);
         this.bytes += raw_packet.header.length;
 
-        raw_packet.buf.copy(this.buf, this.bytes, 0, psize-1);
+        raw_packet.buf.copy(this.buf, this.bytes, 0, psize);
         this.bytes += psize;
 
         this.item++;
