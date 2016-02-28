@@ -5,6 +5,7 @@ x Send TCP sessions every X s
 o Get configuration from conf server
 o What about sessionless packets?
 o Have a local DNS cache valid for 1 hour (conf) and send the hostnames to server for every change
+o Load complementary code from server (tcp...)
 o HealthCheck
 o Authent
 o Security
