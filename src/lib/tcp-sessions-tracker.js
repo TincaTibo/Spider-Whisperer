@@ -15,6 +15,8 @@ const debug = require('debug')('tcp-sessions-tracker');
 const IPv4 = require('pcap/decode/ipv4');
 const TCP = require('pcap/decode/tcp');
 
+const TcpSession = require('./tcp-session-model');
+
 const OPENED = 'OPENED';
 const RESET = 'RESET';
 const FIN = 'FIN';
@@ -272,64 +274,6 @@ class TcpTracker{
 
             this.lastSentDate = currentDate;
         }
-    }
-}
-
-/**
- * Sessions tracked in memory. Not quite the same as the ones sent to the server.
- * @class
- * @private
- */
-class TcpSession{
-    constructor(packetId) {
-        this['@id'] = packetId;
-        this.state = null;
-        this.in = {};
-        this.in.packets = [];
-        this.in.ip = 0;
-        this.in.tcp = 0;
-        this.in.payload = 0;
-
-        this.out = {};
-        this.out.packets = [];
-        this.out.ip = 0;
-        this.out.tcp = 0;
-        this.out.payload = 0;
-        
-        this.minInSeq = null;
-        this.minOutSeq = null;
-
-        this.synTimestamp = null;
-        this.connectTimestamp = null;
-        this.lastTimestamp = null;
-        this.missedSyn = false;
-    }
-
-    /**
-     * Add a packet to the session
-     * @param {string} direction of packet - 'in' or 'out'
-     * @param {PcapPacket} packet
-     * @param {string} packetId
-     */
-    add(direction, packet, packetId, timeStamp){
-        this[direction]['packets'].push({
-            '@id': packetId,
-            tcpPayload: packet.payload.payload.payload.dataLength > 0,
-            timestamp: timeStamp
-        });
-        this[direction]['ip'] += packet.payload.payload.headerLength;
-        this[direction]['tcp'] += packet.payload.payload.payload.headerLength;
-        this[direction]['payload'] += packet.payload.payload.payload.dataLength;
-
-        this.lastTimestamp = timeStamp;
-    }
-
-    /**
-     * Emptys packets array
-     */
-    clearPackets(){
-        this.in.packets.length = 0;
-        this.out.packets.length = 0;
     }
 }
 
