@@ -15,7 +15,7 @@ const debug = require('debug')('tcp-sessions-tracker');
 const IPv4 = require('pcap/decode/ipv4');
 const TCP = require('pcap/decode/tcp');
 
-const TcpSession = require('./tcp-session-model');
+const TcpSession = require('../models/tcp-session-model');
 
 const OPENED = 'OPENED';
 const RESET = 'RESET';
