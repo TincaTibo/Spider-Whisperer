@@ -6,11 +6,11 @@
 
 "use strict";
 
-const TcpPacket = require('tcp-packet-model');
+const TcpPacket = require('./tcp-packet-model');
 
 class TcpSession{
     constructor(packetId) {
-        this['@id'] = `tcp:${packetId}`;
+        this['@id'] = `${packetId}`;
         this['@type'] = 'sp:tcp-session';
         this.state = null;
 
