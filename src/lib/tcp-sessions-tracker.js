@@ -17,11 +17,15 @@ const TCP = require('pcap/decode/tcp');
 
 const TcpSession = require('../models/tcp-session-model');
 
-const OPENED = 'OPENED';
-const RESET = 'RESET';
-const FIN = 'FIN';
-const SYN = 'SYN';
-const FINASK = 'FINASK';
+const SYN_SENT = 'SYN_SENT';
+const SYN_RECEIVED = 'SYN_RECEIVED';
+const ESTABLISHED = 'ESTABLISHED';
+const CLOSE_WAIT = 'CLOSE_WAIT';
+const LAST_ACK = 'LAST_ACK';
+const CLOSED = 'CLOSED';
+
+const dirIn = 'in';
+const dirOut = 'out';
 
 /**
  * Class to track tcp sessions
@@ -49,7 +53,7 @@ class TcpTracker{
         //And to remove sessions from memory when closed and sent
         this.interval_send = setInterval(function (that) {
             that.send();
-        }, config.tcpSessions.delaySec * 5000, this);
+        }, config.tcpSessions.sendSessionDelaySec * 1000, this);
 
         //Options to export to Spider-Tcp
         this.options = {
@@ -89,31 +93,34 @@ class TcpTracker{
             var timeStamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
 
             if (tcp.flags.syn && !tcp.flags.fin){ //initiating tcp connection : SYN flag -- not allowed with FIN
-                if (this.sessions.has(id)){ //more than one request SYN: com with pb -- what should we do ?
-                    this.sessions.get(id).add('out', packet, packetId, timeStamp);
+                if(!this.sessions.has(id) && !this.sessions.has(id) && !tcp.flags.ack) { //request SYN ==> create session
+                    this.sessions.set(id, new TcpSession(packetId));
+                    this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
+                    this.sessions.get(id).state = SYN_SENT;
+                    this.sessions.get(id).minOutSeq = tcp.seqno;
+                    this.sessions.get(id).synTimestamp = timeStamp;
                 }
-                else if (this.sessions.has(di)){ //response SYN
-                    this.sessions.get(di).add('in',packet,packetId, timeStamp);
-                    this.sessions.get(di).state = OPENED;
+                else if (this.sessions.has(di) && tcp.flags.ack){ //response SYN
+                    this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
+                    this.sessions.get(di).state = SYN_RECEIVED;
                     this.sessions.get(di).minInSeq = tcp.seqno; //to avoid lost packets arriving late
                     this.sessions.get(di).connectTimestamp = timeStamp;
                 }
-                else { //request SYN ==> create session
-                    this.sessions.set(id, new TcpSession(packetId));
-                    this.sessions.get(id).add('out',packet,packetId, timeStamp);
-                    this.sessions.get(id).state = SYN;
-                    this.sessions.get(id).minOutSeq = tcp.seqno;
-                    this.sessions.get(id).synTimestamp = timeStamp;
+                else if (this.sessions.has(id)){ //not classic pattern, add it to session...
+                    this.sessions.get(id).add(dirOut, packet, packetId, timeStamp);
+                }
+                else if (this.sessions.has(di)){ //not classic pattern, add it to session...
+                    this.sessions.get(di).add(dirIn, packet, packetId, timeStamp);
                 }
             }
             else if(tcp.flags.rst){ //Reset connection (close) //TODO: can we have RST with other?
                 if (this.sessions.has(id)){
-                    this.sessions.get(id).add('out',packet,packetId, timeStamp);
-                    this.sessions.get(id).state = RESET;
+                    this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
+                    this.sessions.get(id).state = CLOSED;
                 }
                 else if (this.sessions.has(di)){
-                    this.sessions.get(di).add('in',packet,packetId, timeStamp);
-                    this.sessions.get(di).state = RESET;
+                    this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
+                    this.sessions.get(di).state = CLOSED;
                 }
                 else {
                     //reset on unknown connection
@@ -121,21 +128,25 @@ class TcpTracker{
             }
             else if(tcp.flags.fin){ //end of tcp connection : FIN flag
                 if (this.sessions.has(id)){
-                    this.sessions.get(id).add('out',packet,packetId, timeStamp);
-                    if (this.sessions.get(id).state === FINASK){
-                        this.sessions.get(id).state = FIN;
+
+                    this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
+
+                    if (this.sessions.get(id).state === ESTABLISHED){
+                        this.sessions.get(id).state = CLOSE_WAIT;
                     }
-                    else {
-                        this.sessions.get(id).state = FINASK;
+                    else if (this.sessions.get(id).state === CLOSE_WAIT){
+                        this.sessions.get(id).state = LAST_ACK;
                     }
                 }
                 else if (this.sessions.has(di)){
-                    this.sessions.get(di).add('in',packet,packetId, timeStamp);
-                    if (this.sessions.get(di).state === FINASK){
-                        this.sessions.get(di).state = FIN;
+
+                    this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
+
+                    if (this.sessions.get(di).state === ESTABLISHED){
+                        this.sessions.get(di).state = CLOSE_WAIT;
                     }
-                    else {
-                        this.sessions.get(di).state = FINASK;
+                    else if (this.sessions.get(di).state === CLOSE_WAIT){
+                        this.sessions.get(di).state = LAST_ACK;
                     }
                 }
                 else {
@@ -144,31 +155,37 @@ class TcpTracker{
             }
             else if(tcp.flags.ack){
                 if (this.sessions.has(id)){ //packet on an existing session
-                    this.sessions.get(id).add('out',packet,packetId, timeStamp);
-                    if (this.sessions.get(id).state !== OPENED){
-                        this.sessions.get(id).state = OPENED;
+                    this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
+                    if (this.sessions.get(id).state === SYN_RECEIVED ){
+                        this.sessions.get(id).state = ESTABLISHED;
+                    }
+                    else if (this.sessions.get(id).state === LAST_ACK ){
+                        this.sessions.get(id).state = CLOSED;
                     }
                 }
                 else if (this.sessions.has(di)){ //packet on an existing session
-                    this.sessions.get(di).add('in',packet,packetId, timeStamp);
-                    if (this.sessions.get(di).state !== OPENED){
-                        this.sessions.get(di).state = OPENED;
+                    this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
+                    if (this.sessions.get(di).state === SYN_RECEIVED){ //Should not happen in this direction
+                        this.sessions.get(di).state = ESTABLISHED;
+                    }
+                    else if (this.sessions.get(di).state === LAST_ACK ){
+                        this.sessions.get(di).state = CLOSED;
                     }
                 }
-                else{ //Got a packet on a session not opened, so we create a new session
+                else if(tcp.payloadLength){ //Got a packet on a session not opened, so we create a new session if it got data
                     // We guess the direction (src port > dst port)
                     if (tcp.sport > tcp.dport){
                         this.sessions.set(id, new TcpSession(packetId));
-                        this.sessions.get(id).add('out',packet,packetId, timeStamp);
-                        this.sessions.get(id).state = OPENED;
+                        this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
+                        this.sessions.get(id).state = ESTABLISHED;
                         this.sessions.get(id).minOutSeq = tcp.seqno;
                         this.sessions.get(id).minInSeq = tcp.ackno;
                         this.sessions.get(id).missedSyn = true;
                     }
                     else {
                         this.sessions.set(di, new TcpSession(packetId));
-                        this.sessions.get(di).add('in',packet,packetId, timeStamp);
-                        this.sessions.get(di).state = OPENED;
+                        this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
+                        this.sessions.get(di).state = ESTABLISHED;
                         this.sessions.get(di).minInSeq = tcp.seqno;
                         this.sessions.get(di).minOutSeq = tcp.ackno;
                         this.sessions.get(di).missedSyn = true;
@@ -184,11 +201,11 @@ class TcpTracker{
                 return;
             }
             else { //any other packet for an opened session
-                if (this.sessions.has(id) && this.sessions.get(id).state === OPENED){ //packet on an existing session
-                    this.sessions.get(id).add('out',packet,packetId, timeStamp);
+                if (this.sessions.has(id) && this.sessions.get(id).state !== CLOSED){ //packet on an existing session not closed
+                    this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
                 }
-                else if (this.sessions.has(di) && this.sessions.get(id).state === OPENED){ //packet on an existing session
-                    this.sessions.get(di).add('in',packet,packetId, timeStamp);
+                else if (this.sessions.has(di) && this.sessions.get(id).state !== CLOSED){ //packet on an existing session not closed
+                    this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
                 }
                 else{
                     //a packet for which we have nothing to do
@@ -212,67 +229,86 @@ class TcpTracker{
         }
     }
 
-    /**
+    /**CLOSE_WAIT
      * Send sessions to server and remove oldest
      */
     send() {
-        if (this.updated) { //send only if new packets were registered
+        const currentDate = new Date().getTime() / 1e3;
+
+        if (this.updated || (currentDate - this.lastSentDate) > this.sessionTimeOutSec) { //send only if new packets were registered or if we got to remove sessions
             this.updated = false;
 
-            var currentDate = new Date().getTime() / 1e3;
-            var sessionsToSend = {};
-            var sessionsToDelete = [];
+            let sessionsToSend = {};
+            let sessionsToDelete = [];
+            let maxTimestamp = 0;
 
             //Detect sessions to delete
             this.sessions.forEach((session, id) => {
-                if (session.state === RESET || session.state === FIN || (currentDate - session.lastTimestamp > this.sessionTimeOutSec * 1000)) {
+                if (session.state === CLOSED) {
                     sessionsToDelete.push(id);
                 }
-                if (session.lastTimestamp >= this.lastSentDate) {
+                else if((currentDate - session.lastTimestamp) > this.sessionTimeOutSec){
+                    debug(`Session ${session['@id']} too old, closing it.`);
+                    sessionsToDelete.push(id);
+                }
+
+                //Send session updated since max timestamp processed since last sent
+                if (session.lastTimestamp > this.lastSentDate) {
                     sessionsToSend[id] = session;
                 }
-            }, this);
 
-            debug(`Sending ${Object.keys(sessionsToSend).length} sessions out of ${this.sessions.size}.`);
-
-            zlib.gzip(JSON.stringify(sessionsToSend), (err, zbf) => {
-                if (err) {
-                    console.error(err);
+                if(session.lastTimestamp > maxTimestamp){
+                    maxTimestamp = session.lastTimestamp;
                 }
-                else {
-                    this.options.body = zbf;
-                    this.options.headers['Content-Length'] = zbf.length;
+            }, this);
+            this.lastSentDate = maxTimestamp;
 
-                    request(this.options, (err, res, body) => {
-                        if (err) {
-                            console.error(err);
-                        }
-                        else {
-                            debug(`ResponseStatus: ${res.statusCode}`);
-                            if (res.statusCode != 202) {
-                                debug(body);
+            if(Object.keys(sessionsToSend).length > 1) {
+                debug(`Sending ${Object.keys(sessionsToSend).length} sessions out of ${this.sessions.size}.`);
+
+                let toSend = JSON.stringify(sessionsToSend); //serialised before giving the end back and risking modification
+
+                debug(`Deleting ${sessionsToDelete.length} closed sessions.`);
+                //delete sessions that are closed AND sent
+                sessionsToDelete.forEach((id) => {
+                    this.sessions.delete(id)
+                }, this);
+
+                debug(`Emptying packets from sent sessions.`);
+                for (let id in sessionsToSend) {
+                    if (this.sessions.has(id)) {
+                        this.sessions.get(id).clearPackets();
+                    }
+                }
+
+                debug(`Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
+
+                //Sending the sessions
+                zlib.gzip(toSend, (err, zbf) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                    else {
+                        this.options.body = zbf;
+                        this.options.headers['Content-Length'] = zbf.length;
+
+                        request(this.options, (err, res, body) => {
+                            if (err) {
+                                console.error(err);
                             }
-                        }
-                    });
-                }
-            });
-
-            debug(`Deleting ${sessionsToDelete.length} closed sessions.`);
-            //delete sessions that are closed AND sent
-            sessionsToDelete.forEach((id) => {
-                this.sessions.delete(id)
-            }, this);
-
-            debug(`Emptying packets from sent sessions.`);
-            for(let id in sessionsToSend){
-                if(this.sessions.has(id)) {
-                    this.sessions.get(id).clearPackets();
-                }
+                            else {
+                                debug(`ResponseStatus: ${res.statusCode}`);
+                                if (res.statusCode != 202) {
+                                    debug(body);
+                                }
+                            }
+                        });
+                    }
+                });
             }
-
-            debug(`Stats: ${this.stats.nbPacketsTracked} tracked, ${this.stats.nbPacketsNotTCP} not TCP, ${this.stats.nbPacketsOutsideSessions} not in session.`);
-
-            this.lastSentDate = currentDate;
+            else{
+                debug(`No session to send this time.`);
+            }
         }
     }
 }

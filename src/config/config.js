@@ -13,6 +13,9 @@
  */
 var whispererConfig = null;
 
+const INTERFACE = Symbol('INTERFACE');
+const FILE = Symbol('FILE');
+
 /**
  * Configuration fetcher for Whisperer
  * @class
@@ -24,6 +27,8 @@ class WhispererConfig {
 
         //Capture parameters
         this.capture = {};
+        this.capture.mode = INTERFACE; // INTERFACE OR FILE
+        this.capture.file = '../test/test-parkeon.com.pcap';
         this.capture.interface = 'wlan0';
         this.capture.filter = 'tcp port 80';
         this.capture.captureBufferkB = 10;
@@ -50,7 +55,6 @@ class WhispererConfig {
         whispererConfig = this;
     }
 
-
     /**
      * Get configuration from Spider
      * @returns {WhispererConfig}
@@ -68,4 +72,6 @@ class WhispererConfig {
     }
 }
 
-module.exports = WhispererConfig;
+module.exports.WhispererConfig = WhispererConfig;
+module.exports.INTERFACE = INTERFACE;
+module.exports.FILE = FILE;

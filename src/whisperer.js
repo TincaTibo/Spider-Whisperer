@@ -4,6 +4,7 @@
  * @author TincaTibo@gmail.com
  * @version 0.1
  */
+"use strict";
 
 var pcap = require('pcap');
 var debug = require('debug')('whisperer');
@@ -29,13 +30,17 @@ function privsCheck() {
  * @returns {PcapSession}
  */
 function startCaptureSession(config) {
-    if (! config.f) {
-        // default filter is all IPv4 TCP, which is all we know how to decode right now anyway
-        config.f = 'ip proto \\tcp';
+    let pcapSession;
+
+    switch(config.capture.mode){
+        case Config.FILE:
+            pcapSession = pcap.createOfflineSession(config.capture.file, config.capture.filter);
+            break;
+        case Config.INTERFACE:
+            pcapSession = pcap.createSession(config.capture.interface, config.capture.filter, (config.capture.captureBufferkB * 1024 * 1024));
+            break;
     }
-    var pcapSession;
-    //pcapSession = pcap.createSession(config.capture.interface, config.capture.filter, (config.capture.captureBufferkB * 1024 * 1024));
-    pcapSession = pcap.createOfflineSession('../test/test-1session2reqHTTP.pcap', config.capture.filter);
+
     console.log('Listening on ' + pcapSession.device_name);
     return pcapSession;
 }
@@ -47,8 +52,8 @@ function startCaptureSession(config) {
  */
 function startDropWatcher(pcapSession) {
     // Check for pcap dropped packets on an interval
-    var first_drop = setInterval(function () {
-        var stats = pcapSession.stats();
+    let first_drop = setInterval(function () {
+        let stats = pcapSession.stats();
 
         if (stats && stats.ps_drop > 0) {
             debug('pcap dropped packets, need larger buffer or less work to do: ' + JSON.stringify(stats));
@@ -68,16 +73,16 @@ function startDropWatcher(pcapSession) {
  */
 function startListeners(pcapSession, config) {
     //Initialize buffer for sending packets over the network
-    var bufferWeb = new BufferedOutput(new WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
+    let bufferWeb = new BufferedOutput(new WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
 
     //If we want to log also to file
-    var bufferFile;
+    let bufferFile;
     if(config.dumpPackets.dumpToFile) {
         bufferFile = new BufferedOutput(new FileSender(pcapSession.link_type), {sizeKB : config.dumpPackets.fileBufferSizekB});
     }
 
-    var tcpTracker = new TcpTracker(config);
-    var packetId, packet;
+    let tcpTracker = new TcpTracker(config);
+    let packetId, packet;
 
     pcapSession.on('packet', function (raw_packet) {
         packet = pcap.decode.packet(raw_packet);
@@ -115,7 +120,15 @@ function startListeners(pcapSession, config) {
 privsCheck();
 
 // Start the capture
-var config = new Config().getConfig();
-var pcapSession = startCaptureSession(config);
+var config = new Config.WhispererConfig().getConfig();
+
+try {
+    var pcapSession = startCaptureSession(config);
+}
+catch(e){
+    console.error(`Error: ${e.message}. Could not start capture, check your options.`);
+    process.exit(0);
+}
+
 startDropWatcher(pcapSession);
 startListeners(pcapSession, config);

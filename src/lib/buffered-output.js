@@ -6,7 +6,7 @@
 
 "use strict";
 
-var Config = require ('./../config/config.js');
+var Config = require ('./../config/config').WhispererConfig;
 
 /**
  * A buffer to bufferize output of pcap packets before sending to {@link BufferedOutput.sender} when buffer is bound to be full
