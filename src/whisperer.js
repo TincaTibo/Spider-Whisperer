@@ -121,7 +121,7 @@ function startListeners(pcapSession, config) {
 
         pcapSession.on('complete', function () {
 
-            async.each(allPackets, (item, callback) => {
+            async.each(allPackets, (item, callback) => { //TODO: fonctionne pas: ca va trop vite, et les packets sont pas bons??? certains ne sont pas en session!
                 setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
             }, () => {
                 //TODO: add errors callback
