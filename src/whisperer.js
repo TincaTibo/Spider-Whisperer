@@ -13,6 +13,8 @@ var WebSender = require('./lib/web-packet-sender');
 var FileSender = require('./lib/file-packet-sender');
 var TcpTracker = require('./lib/tcp-sessions-tracker');
 var Config = require('./config/config');
+var async = require('async');
+var _ = require('lodash');
 
 /**
  * Checks privilege of current run, since often raw capture is limited to root
@@ -82,38 +84,74 @@ function startListeners(pcapSession, config) {
     }
 
     let tcpTracker = new TcpTracker(config);
-    let packetId, packet;
 
-    pcapSession.on('packet', function (raw_packet) {
-        packet = pcap.decode.packet(raw_packet);
-        packetId = bufferWeb.add(raw_packet, packet);
+    function processPacket(raw_packet, packet, callback){
+        let packetId = bufferWeb.add(raw_packet, packet);
 
-        if(config.dumpPackets.dumpToFile) {
+        if (config.dumpPackets.dumpToFile) {
             bufferFile.add(raw_packet);
         }
 
         tcpTracker.trackPacket(packet, packetId);
 
-    });
-
-    pcapSession.on('complete', function () {
-        bufferWeb.send();
-
-        if(config.dumpPackets.dumpToFile) {
-            bufferFile.send();
+        if(callback){
+            callback(null);
         }
+    }
 
-        setTimeout(function () {
-            tcpTracker.send();
-        }, 1000);
+    if(config.capture.mode === Config.FILE) {
+        let allPackets = [];
+        let previousTS;
 
-        //Waiting for end of asyn calls
-        //TODO: Improve with real ending
-        setTimeout(function () {
-            pcapSession.close();
-            process.exit(0);
-        }, 3000);
-    });
+        pcapSession.on('packet', function (raw_packet) {
+            let packet = pcap.decode.packet(raw_packet);
+
+            //We add a pause so that we try to respect arrival rate of packets
+            let packetTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6
+
+            let delta = previousTS ? packetTimestamp - previousTS : 0;
+            previousTS = packetTimestamp;
+
+            allPackets.push({
+                raw_packet: raw_packet,
+                packet: packet,
+                delta: delta
+                });
+        });
+
+        pcapSession.on('complete', function () {
+
+            async.each(allPackets, (item, callback) => {
+                setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
+            }, () => {
+                //TODO: add errors callback
+                bufferWeb.send();
+
+                if(config.dumpPackets.dumpToFile) {
+                    bufferFile.send();
+                }
+
+                setTimeout(function () {
+                    tcpTracker.send();
+                }, 1000);
+
+                //Waiting for end of asyn calls
+                //TODO: Improve with real ending (async)
+                setTimeout(function () {
+                    pcapSession.close();
+                    process.exit(0);
+                }, 3000);
+            });
+        });
+    }
+    else{
+        pcapSession.on('packet', function (raw_packet) {
+            let packet = pcap.decode.packet(raw_packet);
+
+            processPacket(raw_packet, packet);
+
+        });
+    }
 }
 
 // If privileges are ok

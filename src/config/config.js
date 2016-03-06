@@ -27,8 +27,8 @@ class WhispererConfig {
 
         //Capture parameters
         this.capture = {};
-        this.capture.mode = INTERFACE; // INTERFACE OR FILE
-        this.capture.file = '../test/test-parkeon.com.pcap';
+        this.capture.mode = FILE; // INTERFACE OR FILE
+        this.capture.file = '../test/test-parkeon.com2.pcap';
         this.capture.interface = 'wlan0';
         this.capture.filter = 'tcp port 80';
         this.capture.captureBufferkB = 10;

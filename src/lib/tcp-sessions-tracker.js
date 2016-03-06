@@ -16,6 +16,7 @@ const IPv4 = require('pcap/decode/ipv4');
 const TCP = require('pcap/decode/tcp');
 
 const TcpSession = require('../models/tcp-session-model');
+var Config = require('../config/config');
 
 const SYN_SENT = 'SYN_SENT';
 const SYN_RECEIVED = 'SYN_RECEIVED';
@@ -37,6 +38,7 @@ class TcpTracker{
      * @constructor
      */
     constructor(config){
+        this.config = config;
         this.sessions = new Map;
         this.updated = false;
         this.lastSentDate = 0;
@@ -235,23 +237,15 @@ class TcpTracker{
     send() {
         const currentDate = new Date().getTime() / 1e3;
 
-        if (this.updated || (currentDate - this.lastSentDate) > this.sessionTimeOutSec) { //send only if new packets were registered or if we got to remove sessions
+        if (this.updated || (this.config.capture.mode === Config.INTERFACE && (currentDate - this.lastSentDate) > this.sessionTimeOutSec)) { //send only if new packets were registered or if we got to remove sessions
             this.updated = false;
 
             let sessionsToSend = {};
             let sessionsToDelete = [];
             let maxTimestamp = 0;
 
-            //Detect sessions to delete
-            this.sessions.forEach((session, id) => {
-                if (session.state === CLOSED) {
-                    sessionsToDelete.push(id);
-                }
-                else if((currentDate - session.lastTimestamp) > this.sessionTimeOutSec){
-                    debug(`Session ${session['@id']} too old, closing it.`);
-                    sessionsToDelete.push(id);
-                }
 
+            this.sessions.forEach((session, id) => {
                 //Send session updated since max timestamp processed since last sent
                 if (session.lastTimestamp > this.lastSentDate) {
                     sessionsToSend[id] = session;
@@ -260,6 +254,15 @@ class TcpTracker{
                 if(session.lastTimestamp > maxTimestamp){
                     maxTimestamp = session.lastTimestamp;
                 }
+
+                //Detect sessions to delete after send
+                if (session.state === CLOSED) {
+                    sessionsToDelete.push(id);
+                }
+                else if(this.config.capture.mode === Config.INTERFACE && ((currentDate - session.lastTimestamp) > this.sessionTimeOutSec)){
+                    debug(`Session ${session['@id']} too old, closing it.`);
+                    sessionsToDelete.push(id);
+                }
             }, this);
             this.lastSentDate = maxTimestamp;
 
@@ -267,12 +270,6 @@ class TcpTracker{
                 debug(`Sending ${Object.keys(sessionsToSend).length} sessions out of ${this.sessions.size}.`);
 
                 let toSend = JSON.stringify(sessionsToSend); //serialised before giving the end back and risking modification
-
-                debug(`Deleting ${sessionsToDelete.length} closed sessions.`);
-                //delete sessions that are closed AND sent
-                sessionsToDelete.forEach((id) => {
-                    this.sessions.delete(id)
-                }, this);
 
                 debug(`Emptying packets from sent sessions.`);
                 for (let id in sessionsToSend) {
@@ -308,6 +305,14 @@ class TcpTracker{
             }
             else{
                 debug(`No session to send this time.`);
+            }
+
+            //delete sessions that are closed AND sent
+            if(sessionsToDelete.length){
+                debug(`Deleting ${sessionsToDelete.length} closed sessions.`);
+                sessionsToDelete.forEach((id) => {
+                    this.sessions.delete(id)
+                }, this);
             }
         }
     }
