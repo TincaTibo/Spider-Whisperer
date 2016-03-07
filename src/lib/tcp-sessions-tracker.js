@@ -266,7 +266,7 @@ class TcpTracker{
             }, this);
             this.lastSentDate = maxTimestamp;
 
-            if(Object.keys(sessionsToSend).length > 1) {
+            if(Object.keys(sessionsToSend).length) {
                 debug(`Sending ${Object.keys(sessionsToSend).length} sessions out of ${this.sessions.size}.`);
 
                 let toSend = JSON.stringify(sessionsToSend); //serialised before giving the end back and risking modification

@@ -64,8 +64,8 @@ class TcpSession{
      * Emptys packets array (called when a session is sent to TcpStreams)
      */
     clearPackets(){
-        this.in.packets = [];
-        this.out.packets = [];
+        this.in.packets.length = 0;
+        this.out.packets.length = 0;
     }
 }
 
