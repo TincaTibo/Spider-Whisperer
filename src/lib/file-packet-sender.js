@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 var async = require('async');
+var Config = require('../config/config').WhispererConfig;
 var debug = require('debug')('file-packet-sender');
 var PacketSender = require('./packet-sender');
 
@@ -33,7 +34,7 @@ class FileSender extends PacketSender{
      */
     send(bf){
         //Export to file
-        var fileName = `./logs/output-${this.i++}.pcap`;
+        var fileName = `${Config.getInstance().dumpPackets.outputPath}/output-${this.i++}.pcap`;
         var globalHeader = this.globalHeader;
 
         fs.open(fileName, 'w', function (err,fd) {

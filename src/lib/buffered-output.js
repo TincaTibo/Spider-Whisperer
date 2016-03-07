@@ -63,7 +63,7 @@ class BufferedOutput {
 
         //If adding it to buffer would get an overflow, send buffer and clear buffer
         if(this.bytes + psize + raw_packet.header.length > this.buf.length){
-            this.send();
+            this.send(); //TODO, handle errors
         }
 
         //Add to buffer

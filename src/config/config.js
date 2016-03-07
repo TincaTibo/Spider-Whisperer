@@ -43,8 +43,9 @@ class WhispererConfig {
 
         //Packet saving to file
         this.dumpPackets = {};
-        this.dumpPackets.dumpToFile = false;
+        this.dumpPackets.dumpToFile = true;
         this.dumpPackets.fileBufferSizekB = 1000;
+        this.dumpPackets.outputPath = '../logs';
 
         //For sessions
         this.tcpSessions = {};

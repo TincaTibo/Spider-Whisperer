@@ -104,7 +104,12 @@ function startListeners(pcapSession, config) {
         let previousTS;
 
         pcapSession.on('packet', function (raw_packet) {
-            let packet = pcap.decode.packet(raw_packet);
+            let raw_p = {
+                buf: new Buffer(raw_packet.buf),
+                header: new Buffer(raw_packet.header),
+                link_type: raw_packet.link_type
+            }
+            let packet = pcap.decode.packet(raw_p);
 
             //We add a pause so that we try to respect arrival rate of packets
             let packetTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6
@@ -113,7 +118,7 @@ function startListeners(pcapSession, config) {
             previousTS = packetTimestamp;
 
             allPackets.push({
-                raw_packet: raw_packet,
+                raw_packet: raw_p,
                 packet: packet,
                 delta: delta
                 });
@@ -121,27 +126,31 @@ function startListeners(pcapSession, config) {
 
         pcapSession.on('complete', function () {
 
-            async.each(allPackets, (item, callback) => { //TODO: fonctionne pas: ca va trop vite, et les packets sont pas bons??? certains ne sont pas en session!
-                setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
-            }, () => {
-                //TODO: add errors callback
-                bufferWeb.send();
+            async.eachSeries(
+                allPackets,
+                (item, callback) => {
+                    setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
+                },
+                () => {
+                    //TODO: add errors callback
+                    //TODO: Improve with real ending (async all steps, or better, use a generator)
+                    bufferWeb.send();
 
-                if(config.dumpPackets.dumpToFile) {
-                    bufferFile.send();
+                    if(config.dumpPackets.dumpToFile) {
+                        bufferFile.send();
+                    }
+
+                    setTimeout(function () {
+                        tcpTracker.send();
+                    }, 1000);
+
+                    //Waiting for end of asyn calls
+                    setTimeout(function () {
+                        pcapSession.close();
+                        process.exit(0);
+                    }, 3000);
                 }
-
-                setTimeout(function () {
-                    tcpTracker.send();
-                }, 1000);
-
-                //Waiting for end of asyn calls
-                //TODO: Improve with real ending (async)
-                setTimeout(function () {
-                    pcapSession.close();
-                    process.exit(0);
-                }, 3000);
-            });
+            );
         });
     }
     else{
