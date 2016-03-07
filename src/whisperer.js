@@ -99,11 +99,15 @@ function startListeners(pcapSession, config) {
         }
     }
 
+    // Specific processing for FILE input mode
     if(config.capture.mode === Config.FILE) {
         let allPackets = [];
         let previousTS;
 
         pcapSession.on('packet', function (raw_packet) {
+            //We make a copy of buffers, because we process all at then end
+            //If we don't copy, the new raw_packet overwrites the old one (they share the same allocated memory of [Max size of packets]
+            //defined in the pcap file header
             let raw_p = {
                 buf: new Buffer(raw_packet.buf),
                 header: new Buffer(raw_packet.header),
@@ -113,7 +117,6 @@ function startListeners(pcapSession, config) {
 
             //We add a pause so that we try to respect arrival rate of packets
             let packetTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6
-
             let delta = previousTS ? packetTimestamp - previousTS : 0;
             previousTS = packetTimestamp;
 
@@ -126,12 +129,15 @@ function startListeners(pcapSession, config) {
 
         pcapSession.on('complete', function () {
 
+            //When finish reading file, process all Packets in the order with pauses
             async.eachSeries(
                 allPackets,
                 (item, callback) => {
                     setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
                 },
                 () => {
+                    //When finished processing packets, flush the buffers.
+
                     //TODO: add errors callback
                     //TODO: Improve with real ending (async all steps, or better, use a generator)
                     bufferWeb.send();
@@ -144,7 +150,7 @@ function startListeners(pcapSession, config) {
                         tcpTracker.send();
                     }, 1000);
 
-                    //Waiting for end of asyn calls
+                    //Close the session
                     setTimeout(function () {
                         pcapSession.close();
                         process.exit(0);
@@ -153,12 +159,13 @@ function startListeners(pcapSession, config) {
             );
         });
     }
+    //When input from network card, process packets directly
     else{
         pcapSession.on('packet', function (raw_packet) {
+            // No need to copy buffers as all work with raw_packet is synchronous.
+            // We copy raw_packet's buffers when adding it to the file or web buffers
             let packet = pcap.decode.packet(raw_packet);
-
             processPacket(raw_packet, packet);
-
         });
     }
 }
