@@ -8,7 +8,6 @@
 "use strict";
 
 const fs = require('fs');
-var async = require('async');
 var Config = require('../config/config').WhispererConfig;
 var debug = require('debug')('file-packet-sender');
 var PacketSender = require('./packet-sender');
@@ -41,11 +40,11 @@ class FileSender extends PacketSender{
             if (err) throw err;
 
             //Global header writing
-            fs.write(fd, globalHeader, 0, globalHeader.length, function (err, written, buffer) {
+            fs.write(fd, globalHeader, 0, globalHeader.length, function (err, written) {
                 if (err) throw err;
 
                 //Packets writing
-                fs.write(fd, bf, 0, bf.length, written, function (err, written, buffer) {
+                fs.write(fd, bf, 0, bf.length, written, function (err) {
                     if (err) throw err;
 
                     //Close file at the end of buffer

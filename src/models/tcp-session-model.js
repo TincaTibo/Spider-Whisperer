@@ -35,7 +35,7 @@ class TcpSession{
             ip: 0,
             tcp: 0,
             payload: 0
-        }
+        };
 
         this.minInSeq = null;
         this.minOutSeq = null;
@@ -51,13 +51,14 @@ class TcpSession{
      * @param {string} direction of packet - 'in' or 'out'
      * @param {PcapPacket} packet
      * @param {string} packetId
+     * @param {number} timestamp
      */
-    add(direction, packet, packetId, timeStamp){
+    add(direction, packet, packetId, timestamp){
         //Add packet to selection
         this[direction]['packets'].push(new TcpPacket({
             packet: `pck:${packetId}`,
             tcpPayload: packet.payload.payload.payload.dataLength > 0,
-            timestamp: timeStamp
+            timestamp: timestamp
         }));
 
         //Increase stats counters
@@ -66,7 +67,7 @@ class TcpSession{
         this[direction]['payload'] += packet.payload.payload.payload.dataLength;
 
         //Update last timestamp of tcp session
-        this.lastTimestamp = timeStamp;
+        this.lastTimestamp = timestamp;
     }
 
     /**

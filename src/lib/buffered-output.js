@@ -31,7 +31,7 @@ class BufferedOutput {
 
         if(options.delaySec){
             //Set timeout for sending buffer if not enough packets (but still some)
-            this.interval_send = setInterval(function (that) {
+            setInterval(function (that) {
                 if(that.bytes){
                     that.send();
                 }
@@ -59,7 +59,7 @@ class BufferedOutput {
      */
     add(raw_packet, packet){
         //Get packet size
-        var psize=raw_packet.header.readUInt32LE(8, true);
+        var psize = raw_packet.header.readUInt32LE(8, true);
 
         //If adding it to buffer would get an overflow, send buffer and clear buffer
         if(this.bytes + psize + raw_packet.header.length > this.buf.length){
@@ -79,8 +79,7 @@ class BufferedOutput {
             this.firstPacketTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
         }
 
-        var packetId = `${Config.getInstance().token}.${this.firstPacketTimestamp}.${this.item}`;
-        return packetId;
+        return `${Config.getInstance().token}.${this.firstPacketTimestamp}.${this.item}`;
     }
 }
 

@@ -10,7 +10,7 @@ var _ = require('lodash');
 class TcpPacket {
     /**
      * Initialize the Packet resource
-     * @param {Object} resource
+     * @param {Object} source
      * @constructor
      */
     constructor(source) {

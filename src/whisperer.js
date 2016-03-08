@@ -14,7 +14,6 @@ var FileSender = require('./lib/file-packet-sender');
 var TcpTracker = require('./lib/tcp-sessions-tracker');
 var Config = require('./config/config');
 var async = require('async');
-var _ = require('lodash');
 
 /**
  * Checks privilege of current run, since often raw capture is limited to root
@@ -112,11 +111,11 @@ function startListeners(pcapSession, config) {
                 buf: new Buffer(raw_packet.buf),
                 header: new Buffer(raw_packet.header),
                 link_type: raw_packet.link_type
-            }
+            };
             let packet = pcap.decode.packet(raw_p);
 
             //We add a pause so that we try to respect arrival rate of packets
-            let packetTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6
+            let packetTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
             let delta = previousTS ? packetTimestamp - previousTS : 0;
             previousTS = packetTimestamp;
 
