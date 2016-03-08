@@ -15,15 +15,9 @@ const debug = require('debug')('tcp-sessions-tracker');
 const IPv4 = require('pcap/decode/ipv4');
 const TCP = require('pcap/decode/tcp');
 
-const TcpSession = require('../models/tcp-session-model');
+const TcpSession = require('../models/tcp-session-model').TcpSession;
+const TCP_STATUS = require('../models/tcp-session-model').TCP_STATUS;
 var Config = require('../config/config');
-
-const SYN_SENT = 'SYN_SENT';
-const SYN_RECEIVED = 'SYN_RECEIVED';
-const ESTABLISHED = 'ESTABLISHED';
-const CLOSE_WAIT = 'CLOSE_WAIT';
-const LAST_ACK = 'LAST_ACK';
-const CLOSED = 'CLOSED';
 
 const dirIn = 'in';
 const dirOut = 'out';
@@ -46,14 +40,14 @@ class TcpTracker{
         this.stats = {
             nbPacketsTracked: 0,
             nbPacketsNotTCP:0,
-            nbPacketsOutsideSessions:0,
+            nbPacketsOutsideSessions:0
         };
         this.maxTcpFrame = Math.pow(2,31);
 
         //Set timeout for sending sessions regularly to the server
         //If changed
         //And to remove sessions from memory when closed and sent
-        this.interval_send = setInterval(function (that) {
+        setInterval(function (that) {
             that.send();
         }, config.tcpSessions.sendSessionDelaySec * 1000, this);
 
@@ -98,13 +92,13 @@ class TcpTracker{
                 if(!this.sessions.has(id) && !this.sessions.has(id) && !tcp.flags.ack) { //request SYN ==> create session
                     this.sessions.set(id, new TcpSession(packetId));
                     this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
-                    this.sessions.get(id).state = SYN_SENT;
+                    this.sessions.get(id).state = TCP_STATUS.SYN_SENT;
                     this.sessions.get(id).minOutSeq = tcp.seqno;
                     this.sessions.get(id).synTimestamp = timeStamp;
                 }
                 else if (this.sessions.has(di) && tcp.flags.ack){ //response SYN
                     this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
-                    this.sessions.get(di).state = SYN_RECEIVED;
+                    this.sessions.get(di).state = TCP_STATUS.SYN_RECEIVED;
                     this.sessions.get(di).minInSeq = tcp.seqno; //to avoid lost packets arriving late
                     this.sessions.get(di).connectTimestamp = timeStamp;
                 }
@@ -115,14 +109,14 @@ class TcpTracker{
                     this.sessions.get(di).add(dirIn, packet, packetId, timeStamp);
                 }
             }
-            else if(tcp.flags.rst){ //Reset connection (close) //TODO: can we have RST with other?
+            else if(tcp.flags.rst){ //Reset connection (close)
                 if (this.sessions.has(id)){
                     this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
-                    this.sessions.get(id).state = CLOSED;
+                    this.sessions.get(id).state = TCP_STATUS.CLOSED;
                 }
                 else if (this.sessions.has(di)){
                     this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
-                    this.sessions.get(di).state = CLOSED;
+                    this.sessions.get(di).state = TCP_STATUS.CLOSED;
                 }
                 else {
                     //reset on unknown connection
@@ -133,22 +127,22 @@ class TcpTracker{
 
                     this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
 
-                    if (this.sessions.get(id).state === ESTABLISHED){
-                        this.sessions.get(id).state = CLOSE_WAIT;
+                    if (this.sessions.get(id).state === TCP_STATUS.ESTABLISHED){
+                        this.sessions.get(id).state = TCP_STATUS.CLOSE_WAIT;
                     }
-                    else if (this.sessions.get(id).state === CLOSE_WAIT){
-                        this.sessions.get(id).state = LAST_ACK;
+                    else if (this.sessions.get(id).state === TCP_STATUS.CLOSE_WAIT){
+                        this.sessions.get(id).state = TCP_STATUS.LAST_ACK;
                     }
                 }
                 else if (this.sessions.has(di)){
 
                     this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
 
-                    if (this.sessions.get(di).state === ESTABLISHED){
-                        this.sessions.get(di).state = CLOSE_WAIT;
+                    if (this.sessions.get(di).state === TCP_STATUS.ESTABLISHED){
+                        this.sessions.get(di).state = TCP_STATUS.CLOSE_WAIT;
                     }
-                    else if (this.sessions.get(di).state === CLOSE_WAIT){
-                        this.sessions.get(di).state = LAST_ACK;
+                    else if (this.sessions.get(di).state === TCP_STATUS.CLOSE_WAIT){
+                        this.sessions.get(di).state = TCP_STATUS.LAST_ACK;
                     }
                 }
                 else {
@@ -158,20 +152,20 @@ class TcpTracker{
             else if(tcp.flags.ack){
                 if (this.sessions.has(id)){ //packet on an existing session
                     this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
-                    if (this.sessions.get(id).state === SYN_RECEIVED ){
-                        this.sessions.get(id).state = ESTABLISHED;
+                    if (this.sessions.get(id).state === TCP_STATUS.SYN_RECEIVED ){
+                        this.sessions.get(id).state = TCP_STATUS.ESTABLISHED;
                     }
-                    else if (this.sessions.get(id).state === LAST_ACK ){
-                        this.sessions.get(id).state = CLOSED;
+                    else if (this.sessions.get(id).state === TCP_STATUS.LAST_ACK ){
+                        this.sessions.get(id).state = TCP_STATUS.CLOSED;
                     }
                 }
                 else if (this.sessions.has(di)){ //packet on an existing session
                     this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
-                    if (this.sessions.get(di).state === SYN_RECEIVED){ //Should not happen in this direction
-                        this.sessions.get(di).state = ESTABLISHED;
+                    if (this.sessions.get(di).state === TCP_STATUS.SYN_RECEIVED){ //Should not happen in this direction
+                        this.sessions.get(di).state = TCP_STATUS.ESTABLISHED;
                     }
-                    else if (this.sessions.get(di).state === LAST_ACK ){
-                        this.sessions.get(di).state = CLOSED;
+                    else if (this.sessions.get(di).state === TCP_STATUS.LAST_ACK ){
+                        this.sessions.get(di).state = TCP_STATUS.CLOSED;
                     }
                 }
                 else if(tcp.payloadLength){ //Got a packet on a session not opened, so we create a new session if it got data
@@ -179,7 +173,7 @@ class TcpTracker{
                     if (tcp.sport > tcp.dport){
                         this.sessions.set(id, new TcpSession(packetId));
                         this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
-                        this.sessions.get(id).state = ESTABLISHED;
+                        this.sessions.get(id).state = TCP_STATUS.ESTABLISHED;
                         this.sessions.get(id).minOutSeq = tcp.seqno;
                         this.sessions.get(id).minInSeq = tcp.ackno;
                         this.sessions.get(id).missedSyn = true;
@@ -187,7 +181,7 @@ class TcpTracker{
                     else {
                         this.sessions.set(di, new TcpSession(packetId));
                         this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
-                        this.sessions.get(di).state = ESTABLISHED;
+                        this.sessions.get(di).state = TCP_STATUS.ESTABLISHED;
                         this.sessions.get(di).minInSeq = tcp.seqno;
                         this.sessions.get(di).minOutSeq = tcp.ackno;
                         this.sessions.get(di).missedSyn = true;
@@ -203,10 +197,10 @@ class TcpTracker{
                 return;
             }
             else { //any other packet for an opened session
-                if (this.sessions.has(id) && this.sessions.get(id).state !== CLOSED){ //packet on an existing session not closed
+                if (this.sessions.has(id) && this.sessions.get(id).state !== TCP_STATUS.CLOSED){ //packet on an existing session not closed
                     this.sessions.get(id).add(dirOut,packet,packetId, timeStamp);
                 }
-                else if (this.sessions.has(di) && this.sessions.get(id).state !== CLOSED){ //packet on an existing session not closed
+                else if (this.sessions.has(di) && this.sessions.get(id).state !== TCP_STATUS.CLOSED){ //packet on an existing session not closed
                     this.sessions.get(di).add(dirIn,packet,packetId, timeStamp);
                 }
                 else{
@@ -256,7 +250,7 @@ class TcpTracker{
                 }
 
                 //Detect sessions to delete after send
-                if (session.state === CLOSED) {
+                if (session.state === TCP_STATUS.CLOSED) {
                     sessionsToDelete.push(id);
                 }
                 else if(this.config.capture.mode === Config.INTERFACE && ((currentDate - session.lastTimestamp) > this.sessionTimeOutSec)){

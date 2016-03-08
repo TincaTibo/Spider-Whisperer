@@ -8,6 +8,15 @@
 
 const TcpPacket = require('./tcp-packet-model');
 
+const TCP_STATUS = {
+    SYN_SENT : 'SYN_SENT',
+    SYN_RECEIVED : 'SYN_RECEIVED',
+    ESTABLISHED : 'ESTABLISHED',
+    CLOSE_WAIT : 'CLOSE_WAIT',
+    LAST_ACK : 'LAST_ACK',
+    CLOSED : 'CLOSED'
+};
+
 class TcpSession{
     constructor(packetId) {
         this['@id'] = `${packetId}`;
@@ -69,4 +78,5 @@ class TcpSession{
     }
 }
 
-module.exports = TcpSession;
+module.exports.TcpSession = TcpSession;
+module.exports.TCP_STATUS = TCP_STATUS;
