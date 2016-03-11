@@ -6,7 +6,8 @@
 
 "use strict";
 
-var Config = require ('./../config/config').WhispererConfig;
+const Config = require ('./../config/config').WhispererConfig;
+const debug = require ('debug')('buffered-output');
 
 /**
  * A buffer to bufferize output of pcap packets before sending to {@link BufferedOutput.sender} when buffer is bound to be full
@@ -33,7 +34,7 @@ class BufferedOutput {
             //Set timeout for sending buffer if not enough packets (but still some)
             setInterval(function (that) {
                 if(that.bytes){
-                    that.send();
+                    that.send(callbackSend);
                 }
             }, options.delaySec * 1000, this);
         }
@@ -42,9 +43,9 @@ class BufferedOutput {
     /**
      * Actually flush the buffer to the {@link BufferedOutput.sender}
      */
-    send(){
+    send(callback){
         if(this.bytes) {
-            this.sender.send(new Buffer(this.buf).slice(0, this.bytes));
+            this.sender.send(new Buffer(this.buf.slice(0, this.bytes)), callback);
             this.bytes = 0;
             this.item = 0;
             this.firstPacketTimestamp = '';
@@ -63,7 +64,7 @@ class BufferedOutput {
 
         //If adding it to buffer would get an overflow, send buffer and clear buffer
         if(this.bytes + psize + raw_packet.header.length > this.buf.length){
-            this.send(); //TODO, handle errors
+            this.send(callbackSend);
         }
 
         //Add to buffer
@@ -83,7 +84,12 @@ class BufferedOutput {
     }
 }
 
-
+function callbackSend(err){
+    if (err) {
+        debug(`Error while sending packets:`);
+        console.error(err);
+    }
+}
 
 
 

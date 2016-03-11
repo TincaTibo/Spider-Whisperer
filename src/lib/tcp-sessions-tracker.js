@@ -47,8 +47,13 @@ class TcpTracker{
         //Set timeout for sending sessions regularly to the server
         //If changed
         //And to remove sessions from memory when closed and sent
-        setInterval(function (that) {
-            that.send();
+        setInterval(that => {
+            that.send(err => {
+                if(err){
+                    debug(`Error while sending sessions:`);
+                    console.error(err);
+                }
+            });
         }, config.tcpSessions.sendSessionDelaySec * 1000, this);
 
         //Options to export to Spider-Tcp
@@ -228,7 +233,7 @@ class TcpTracker{
     /**CLOSE_WAIT
      * Send sessions to server and remove oldest
      */
-    send() {
+    send(callback) {
         const currentDate = new Date().getTime() / 1e3;
 
         if (this.updated || (this.config.capture.mode === Config.INTERFACE && (currentDate - this.lastSentDate) > this.sessionTimeOutSec)) { //send only if new packets were registered or if we got to remove sessions
@@ -277,7 +282,7 @@ class TcpTracker{
                 //Sending the sessions
                 zlib.gzip(toSend, (err, zbf) => {
                     if (err) {
-                        console.error(err);
+                        return callback(err);
                     }
                     else {
                         this.options.body = zbf;
@@ -285,13 +290,14 @@ class TcpTracker{
 
                         request(this.options, (err, res, body) => {
                             if (err) {
-                                console.error(err);
+                                return callback(err);
                             }
                             else {
                                 debug(`ResponseStatus: ${res.statusCode}`);
                                 if (res.statusCode != 202) {
                                     debug(body);
                                 }
+                                return callback(null);
                             }
                         });
                     }

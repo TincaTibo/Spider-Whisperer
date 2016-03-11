@@ -47,7 +47,7 @@ class WebSender extends PacketSender {
      * while adding first the pcap header to the file
      * @param {Buffer} bf - Buffer containing pcap packets to send
      */
-    send (bf) {
+    send (bf, callback) {
         //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
         debug(`Sending ${bf.length} bytes of packets.`);
 
@@ -64,13 +64,14 @@ class WebSender extends PacketSender {
 
                 request(this.options,(err, res, body) => {
                     if(err){
-                        console.error(err);
+                        return callback(err);
                     }
                     else{
                         debug(`ResponseStatus: ${res.statusCode}`);
                         if(res.statusCode != 202){
                             debug(body);
                         }
+                        return callback(null);
                     }
                 });
             }

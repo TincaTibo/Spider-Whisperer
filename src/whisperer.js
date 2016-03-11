@@ -137,28 +137,38 @@ function startListeners(pcapSession, config) {
                 () => {
                     //When finished processing packets, flush the buffers.
 
-                    //TODO: add errors callback
-                    //TODO: Improve with real ending (async all steps, or better, use a generator)
-                    bufferWeb.send();
+                    async.parallel([
+                        callback => {
+                            bufferWeb.send(callback);
+                        },
+                        callback => {
+                            if(config.dumpPackets.dumpToFile) {
+                                bufferFile.send(callback);
+                            }
+                            else{
+                                callback(null);
+                            }
+                        },
+                        callback => {
+                            tcpTracker.send(callback);
+                        }
+                    ], err => {
+                        //We've finished flushing buffer.
 
-                    if(config.dumpPackets.dumpToFile) {
-                        bufferFile.send();
-                    }
+                        if(err){
+                            debug(`Error while ending process:`);
+                            console.error(err);
+                        }
 
-                    setTimeout(function () {
-                        tcpTracker.send();
-                    }, 1000);
-
-                    //Close the session
-                    setTimeout(function () {
+                        //Close the session
                         pcapSession.close();
                         process.exit(0);
-                    }, 3000);
+                    });
                 }
             );
         });
     }
-    //When input from network card, process packets directly
+    //When input from network card, process packets directly, and indefinitely
     else{
         pcapSession.on('packet', function (raw_packet) {
             // No need to copy buffers as all work with raw_packet is synchronous.

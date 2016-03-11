@@ -31,26 +31,28 @@ class FileSender extends PacketSender{
      * while adding first the pcap header to the file
      * @param {Buffer} bf - Buffer containing pcap packets to send
      */
-    send(bf){
+    send(bf, callback){
         //Export to file
         var fileName = `${Config.getInstance().dumpPackets.outputPath}/output-${this.i++}.pcap`;
         var globalHeader = this.globalHeader;
 
         fs.open(fileName, 'w', function (err,fd) {
-            if (err) throw err;
+            if (err) return callback(err);
 
             //Global header writing
             fs.write(fd, globalHeader, 0, globalHeader.length, function (err, written) {
-                if (err) throw err;
+                if (err) return callback(err);
 
                 //Packets writing
                 fs.write(fd, bf, 0, bf.length, written, function (err) {
-                    if (err) throw err;
+                    if (err) return callback(err);
 
                     //Close file at the end of buffer
                     fs.close(fd, function (err) {
-                        if (err) throw err;
+                        if (err) return callback(err);
+
                         debug(`File ${fileName}: Saved!`);
+                        return callback(null);
                     });
                 });
             });
