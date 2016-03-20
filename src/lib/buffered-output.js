@@ -45,7 +45,7 @@ class BufferedOutput {
      */
     send(callback){
         if(this.bytes) {
-            this.sender.send(new Buffer(this.buf.slice(0, this.bytes)), callback);
+            this.sender.send(new Buffer(this.buf.slice(0, this.bytes)),callback);
             this.bytes = 0;
             this.item = 0;
             this.firstPacketTimestamp = '';

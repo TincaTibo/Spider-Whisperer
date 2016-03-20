@@ -8,9 +8,9 @@
 "use strict";
 
 const fs = require('fs');
-var Config = require('../config/config').WhispererConfig;
-var debug = require('debug')('file-packet-sender');
-var PacketSender = require('./packet-sender');
+const Config = require('../config/config').WhispererConfig;
+const debug = require('debug')('file-packet-sender');
+const PacketSender = require('./packet-sender');
 
 /**
  * Object to save packets into local pcap files
@@ -58,6 +58,6 @@ class FileSender extends PacketSender{
             });
         });
     }
-};
+}
 
 module.exports = FileSender;
