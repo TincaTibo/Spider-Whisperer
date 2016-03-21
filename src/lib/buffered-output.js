@@ -8,6 +8,7 @@
 
 const Config = require ('./../config/config').WhispererConfig;
 const debug = require ('debug')('buffered-output');
+const Q = require('q');
 
 /**
  * A buffer to bufferize output of pcap packets before sending to {@link BufferedOutput.sender} when buffer is bound to be full
@@ -34,7 +35,7 @@ class BufferedOutput {
             //Set timeout for sending buffer if not enough packets (but still some)
             setInterval(function (that) {
                 if(that.bytes){
-                    that.send(callbackSend);
+                    that.send().fail(errorSending);
                 }
             }, options.delaySec * 1000, this);
         }
@@ -43,13 +44,18 @@ class BufferedOutput {
     /**
      * Actually flush the buffer to the {@link BufferedOutput.sender}
      */
-    send(callback){
-        if(this.bytes) {
-            this.sender.send(new Buffer(this.buf.slice(0, this.bytes)),callback);
-            this.bytes = 0;
-            this.item = 0;
-            this.firstPacketTimestamp = '';
-        }
+    send(){
+        const that = this;
+        return Q.async(function *(){
+            if(that.bytes) {
+                const buf = new Buffer(that.buf.slice(0, that.bytes));
+                that.bytes = 0;
+                that.item = 0;
+                that.firstPacketTimestamp = '';
+
+                yield that.sender.send(buf);
+            } 
+        })();
     }
 
     /**
@@ -64,7 +70,7 @@ class BufferedOutput {
 
         //If adding it to buffer would get an overflow, send buffer and clear buffer
         if(this.bytes + psize + raw_packet.header.length > this.buf.length){
-            this.send(callbackSend);
+            this.send().fail(errorSending);
         }
 
         //Add to buffer
@@ -84,14 +90,9 @@ class BufferedOutput {
     }
 }
 
-function callbackSend(err){
-    if (err) {
-        debug(`Error while sending packets:`);
-        console.error(err);
-    }
+function errorSending(err) {
+    debug(`Error while sending packets: ${err.message}`);
+    console.error(err.stack);
 }
-
-
-
 
 module.exports = BufferedOutput;

@@ -6,14 +6,15 @@
  */
 "use strict";
 
-var pcap = require('pcap');
-var debug = require('debug')('whisperer');
-var BufferedOutput = require('./lib/buffered-output');
-var WebSender = require('./lib/web-packet-sender');
-var FileSender = require('./lib/file-packet-sender');
-var TcpTracker = require('./lib/tcp-sessions-tracker');
-var Config = require('./config/config');
-var async = require('async');
+const pcap = require('pcap');
+const debug = require('debug')('whisperer');
+const BufferedOutput = require('./lib/buffered-output');
+const WebSender = require('./lib/web-packet-sender');
+const FileSender = require('./lib/file-packet-sender');
+const TcpTracker = require('./lib/tcp-sessions-tracker');
+const Config = require('./config/config');
+const Q = require('q');
+const async = require('async-q');
 
 /**
  * Checks privilege of current run, since often raw capture is limited to root
@@ -57,10 +58,10 @@ function startDropWatcher(pcapSession) {
         let stats = pcapSession.stats();
 
         if (stats && stats.ps_drop > 0) {
-            debug('pcap dropped packets, need larger buffer or less work to do: ' + JSON.stringify(stats));
+            debug('Pcap dropped packets, need larger buffer or less work to do: ' + JSON.stringify(stats));
             clearInterval(first_drop);
             setInterval(function () {
-                debug('pcap dropped packets: ' + JSON.stringify(stats));
+                debug('Pcap dropped packets: ' + JSON.stringify(stats));
             }, 5000);
         }
     }, 1000);
@@ -84,7 +85,7 @@ function startListeners(pcapSession, config) {
 
     let tcpTracker = new TcpTracker(config);
 
-    function processPacket(raw_packet, packet, callback){
+    function processPacket(raw_packet, packet){
         let packetId = bufferWeb.add(raw_packet, packet);
 
         if (config.dumpPackets.dumpToFile) {
@@ -92,10 +93,6 @@ function startListeners(pcapSession, config) {
         }
 
         tcpTracker.trackPacket(packet, packetId);
-
-        if(callback){
-            callback(null);
-        }
     }
 
     // Specific processing for FILE input mode
@@ -120,52 +117,37 @@ function startListeners(pcapSession, config) {
             previousTS = packetTimestamp;
 
             allPackets.push({
-                raw_packet: raw_p,
+                delta: delta,
                 packet: packet,
-                delta: delta
-                });
+                raw_packet: raw_p
+            });
         });
 
         pcapSession.on('complete', function () {
+            Q.async(function *(){
+                //When finish reading file, process all Packets in the order with pauses
+                yield async.eachSeries(allPackets,
+                    onePacket => Q.async(function * (){
+                        yield Q.delay(onePacket.delta * 1e3);
+                        processPacket(onePacket.raw_packet, onePacket.packet);
+                })());
 
-            //When finish reading file, process all Packets in the order with pauses
-            async.eachSeries(
-                allPackets,
-                (item, callback) => {
-                    setTimeout(processPacket, item.delta * 1e3, item.raw_packet, item.packet, callback);
-                },
-                () => {
-                    //When finished processing packets, flush the buffers.
+                //When finished processing packets, flush the buffers.
+                yield bufferWeb.send();
+                yield tcpTracker.send();
 
-                    async.parallel([
-                        callback => {
-                            bufferWeb.send(callback);
-                        },
-                        callback => {
-                            if(config.dumpPackets.dumpToFile) {
-                                bufferFile.send(callback);
-                            }
-                            else{
-                                callback(null);
-                            }
-                        },
-                        callback => {
-                            tcpTracker.send(callback);
-                        }
-                    ], err => {
-                        //We've finished flushing buffer.
-
-                        if(err){
-                            debug(`Error while ending process:`);
-                            console.error(err);
-                        }
-
-                        //Close the session
-                        pcapSession.close();
-                        process.exit(0);
-                    });
+                if(config.dumpPackets.dumpToFile) {
+                    yield bufferFile.send();
                 }
-            );
+
+                //Close the session
+                pcapSession.close();
+                process.exit(0);
+
+            })().fail(err => {
+                debug(`Error while ending process: ${err.message}`);
+                console.error(err.stack);
+            });
         });
     }
     //When input from network card, process packets directly, and indefinitely
@@ -179,19 +161,23 @@ function startListeners(pcapSession, config) {
     }
 }
 
-// If privileges are ok
-privsCheck();
+Q.async(function *(){
+    // If privileges are ok
+    privsCheck();
 
-// Start the capture
-var config = new Config.WhispererConfig().getConfig();
+    // Start the capture
+    const config = yield Config.WhispererConfig.initConfig();
 
-try {
-    var pcapSession = startCaptureSession(config);
-}
-catch(e){
-    console.error(`Error: ${e.message}. Could not start capture, check your options.`);
-    process.exit(0);
-}
+    try {
+        var pcapSession = startCaptureSession(config);
+    }
+    catch(e){
+        console.error(`Error: ${e.message}. Could not start capture, check your options.`);
+        process.exit(0);
+    }
 
-startDropWatcher(pcapSession);
-startListeners(pcapSession, config);
+    startDropWatcher(pcapSession);
+    startListeners(pcapSession, config);
+})().fail(err => {
+    console.error(err.stack);
+});

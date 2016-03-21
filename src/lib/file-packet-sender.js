@@ -7,10 +7,11 @@
 
 "use strict";
 
-const fs = require('fs');
 const Config = require('../config/config').WhispererConfig;
 const debug = require('debug')('file-packet-sender');
 const PacketSender = require('./packet-sender');
+const Q = require('q');
+const FS = require('q-io/fs');
 
 /**
  * Object to save packets into local pcap files
@@ -31,32 +32,24 @@ class FileSender extends PacketSender{
      * while adding first the pcap header to the file
      * @param {Buffer} bf - Buffer containing pcap packets to send
      */
-    send(bf, callback){
-        //Export to file
-        var fileName = `${Config.getInstance().dumpPackets.outputPath}/output-${this.i++}.pcap`;
-        var globalHeader = this.globalHeader;
-
-        fs.open(fileName, 'w', function (err,fd) {
-            if (err) return callback(err);
+    send(bf){
+        const that = this;
+        return Q.async(function * () {
+            //Export to file
+            const fileName = `${Config.getInstance().dumpPackets.outputPath}/output-${that.i++}.pcap`;
+            const globalHeader = that.globalHeader;
+            const fd = yield FS.open(fileName, 'w');
 
             //Global header writing
-            fs.write(fd, globalHeader, 0, globalHeader.length, function (err, written) {
-                if (err) return callback(err);
+            let written = yield fd.write(globalHeader);
 
-                //Packets writing
-                fs.write(fd, bf, 0, bf.length, written, function (err) {
-                    if (err) return callback(err);
+            //Packets writing
+            yield fd.write(bf);
 
-                    //Close file at the end of buffer
-                    fs.close(fd, function (err) {
-                        if (err) return callback(err);
-
-                        debug(`File ${fileName}: Saved!`);
-                        return callback(null);
-                    });
-                });
-            });
-        });
+            //Close file at the end of buffer
+            yield fd.close();
+            debug(`File ${fileName}: Saved!`);
+        })();
     }
 }
 

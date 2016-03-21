@@ -6,6 +6,8 @@
 
 "use strict";
 
+const Q = require('q');
+
 /**
  * Current config
  * @static
@@ -60,8 +62,8 @@ class WhispererConfig {
      * Get configuration from Spider
      * @returns {WhispererConfig}
      */
-    getConfig(){
-        return this;
+    static initConfig(){
+        return Q(new WhispererConfig());
     }
 
     /**

@@ -53,7 +53,7 @@ class PacketSender {
      * while adding first the pcap header to the file
      * @param {Buffer} bf - Buffer containing pcap packets to send
      */
-    send(bf, callback) {}
+    send(bf) {}
 }
 
 module.exports = PacketSender;

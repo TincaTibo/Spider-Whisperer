@@ -9,10 +9,11 @@
 
 const http = require('http');
 const zlib = require('zlib');
-var request = require('request');
-var async = require('async');
-var debug = require('debug')('web-packet-sender');
-var PacketSender = require('./packet-sender');
+const request = require('../utils/requestAsPromise');
+const async = require('async');
+const debug = require('debug')('web-packet-sender');
+const Q = require('q');
+const PacketSender = require('./packet-sender');
 
 /**
  * Object to send packets on the web to Spider server
@@ -47,36 +48,28 @@ class WebSender extends PacketSender {
      * while adding first the pcap header to the file
      * @param {Buffer} bf - Buffer containing pcap packets to send
      */
-    send (bf, callback) {
-        //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
-        debug(`Sending ${bf.length} bytes of packets.`);
+    send (bf) {
+        let that = this;
+        return Q.async(function * (){
+            //TODO: improve this by removing concat and sending both buffer to the zip. Perf tests needed.
+            debug(`Sending ${bf.length} bytes of packets.`);
 
-        var bfToSend = Buffer.concat([this.globalHeader,bf],this.globalHeader.length + bf.length);
+            var bfToSend = Buffer.concat([that.globalHeader,bf],that.globalHeader.length + bf.length);
 
-        // zip
-        zlib.gzip(bfToSend, (err, zbf) => {
-            if (err) {
-                debug(err);
+            // zip
+            let zbf = yield Q.nfcall(zlib.gzip, bfToSend);
+                
+            that.options.body = zbf;
+            that.options.headers['Content-Length'] = zbf.length;
+
+            //send the request to Spider
+            let res = yield request(that.options);
+
+            debug(`ResponseStatus: ${res.response.statusCode}`);
+            if(res.response.statusCode != 202){
+                debug(res.body);
             }
-            else {
-                this.options.body = zbf;
-                this.options.headers['Content-Length'] = zbf.length;
-
-                request(this.options,(err, res, body) => {
-                    if(err){
-                        return callback(err);
-                    }
-                    else{
-                        debug(`ResponseStatus: ${res.statusCode}`);
-                        if(res.statusCode != 202){
-                            debug(body);
-                        }
-                        return callback(null);
-                    }
-                });
-            }
-        });
-
+        })();
     }
 }
 
