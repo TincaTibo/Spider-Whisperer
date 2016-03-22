@@ -49,7 +49,7 @@ class TcpTracker{
         //And to remove sessions from memory when closed and sent
         setInterval(that => {
             that.send().fail(err => {
-                debug(`Error while sending sessions:`);
+                debug(`Error while sending sessions: ${err.message}`);
                 console.error(err);
             });
         }, config.tcpSessions.sendSessionDelaySec * 1000, this);

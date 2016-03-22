@@ -53,6 +53,10 @@ class WhispererConfig {
         this.dnsCache = {};
         this.dnsCache.trackIp = true;
         this.dnsCache.ttl = 'P1D';
+        this.dnsCache.sendDelay = 'PT1M';
+        this.dnsCache.purgeDelay = 'PT1H';
+        this.dnsCache.spiderConfigURI = 'http://localhost:3003/';
+        this.dnsCache.spiderConfigTimeout = 2000;
 
         //For sessions
         this.tcpSessions = {};
