@@ -41,11 +41,12 @@ class DNSCache {
                 });
 
                 try {
-                    const domains = yield Q.nfcall(dns.reverse(ip));
+                    const domains = yield Q.nfcall(dns.reverse, ip);
                     that.cache.get(ip).hostname = domains[0];
+                    debug(`Hostname for ${ip}: ${that.cache.get(ip).hostname}.`);
                 }
                 catch (e){
-                    debug(`Could not get hostname for ${ip}.`);
+                    debug(`Could not get hostname for ${ip}: ${e.message}`);
                 }
 
                 return that.cache.get(ip).hostname || ip;
@@ -55,8 +56,8 @@ class DNSCache {
 
     getItemsUpdatedSince(moment){
         let res = [];
-        for(let item of this.cache){
-            if(item.lastUpdate > moment) {
+        for(let item of this.cache.values()){
+            if(item.lastUpdate.isAfter(moment)) {
                 res.push(item);
             }
         }
@@ -65,7 +66,7 @@ class DNSCache {
     
     purge(){
         for(let key of this.cache.keys()){
-            if(this.cache.get(key).lastSeen > moment().subtract(this.ttl)) {
+            if(this.cache.get(key).lastSeen.isAfter(moment().subtract(this.ttl))) {
                 debug(`Removed IP ${key}, not seen since TTL: ${this.ttl.humanize()}`);
                 this.cache.delete(key);
             }

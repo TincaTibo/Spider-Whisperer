@@ -287,7 +287,7 @@ class TcpTracker{
 
                     const res = yield request(that.options);
 
-                    debug(`ResponseStatus: ${res.response.statusCode}`);
+                    debug(`ResponseStatus: ${res.response.statusCode} in ${res.response.elapsedTime}ms`);
                     if (res.response.statusCode != 202) {
                         debug(res.body);
                     }
