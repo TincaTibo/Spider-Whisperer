@@ -20,8 +20,11 @@ class DNSTracker {
             const srcIp = ip.saddr.addr.join('.');
             const dstIp = ip.daddr.addr.join('.');
 
+            const that = this;
             //add IPs to DNS Cache
-            
+            Q.async(function * (){
+                yield Q.all([that.dnsCache.reverse(srcIp),that.dnsCache.reverse(dstIp)]);
+            })();
         }
     }
 }
