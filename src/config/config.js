@@ -23,7 +23,7 @@ const FILE = Symbol('FILE');
  * @class
  */
 class WhispererConfig {
-
+    //TODO : use moment and ISO everywhere
     constructor () {
         this.token = 'test';
 
@@ -49,8 +49,14 @@ class WhispererConfig {
         this.dumpPackets.fileBufferSizekB = 1000;
         this.dumpPackets.outputPath = '../logs';
 
+        //For DNS reversal
+        this.dnsCache = {};
+        this.dnsCache.trackIp = true;
+        this.dnsCache.ttl = 'P1D';
+
         //For sessions
         this.tcpSessions = {};
+        this.tcpSessions.track = true;
         this.tcpSessions.spiderTcpStreamsURI = 'http://localhost:3001/tcp-sessions/v1';
         this.tcpSessions.sendSessionDelaySec = 5;
         this.tcpSessions.sessionTimeOutSec = 120;

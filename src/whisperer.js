@@ -12,6 +12,7 @@ const BufferedOutput = require('./lib/buffered-output');
 const WebSender = require('./lib/web-packet-sender');
 const FileSender = require('./lib/file-packet-sender');
 const TcpTracker = require('./lib/tcp-sessions-tracker');
+const DNSTracker = require('./lib/dns-tracker');
 const Config = require('./config/config');
 const Q = require('q');
 const async = require('async-q');
@@ -83,16 +84,30 @@ function startListeners(pcapSession, config) {
         bufferFile = new BufferedOutput(new FileSender(pcapSession.link_type), {sizeKB : config.dumpPackets.fileBufferSizekB});
     }
 
-    let tcpTracker = new TcpTracker(config);
+    let dnsTracker;
+    if (config.dnsCache.trackIp) {
+        dnsTracker = new DNSTracker(config);
+    }
+
+    let tcpTracker;
+    if(config.tcpSessions.track) {
+        tcpTracker = new TcpTracker(config);
+    }
 
     function processPacket(raw_packet, packet){
         let packetId = bufferWeb.add(raw_packet, packet);
 
+        if (config.dnsCache.trackIp){
+            dnsTracker.trackIpFromPacket(packet);
+        }
+        
         if (config.dumpPackets.dumpToFile) {
             bufferFile.add(raw_packet);
         }
-
-        tcpTracker.trackPacket(packet, packetId);
+        
+        if(config.tcpSessions.track) {
+            tcpTracker.trackPacket(packet, packetId);
+        }
     }
 
     // Specific processing for FILE input mode
@@ -134,7 +149,10 @@ function startListeners(pcapSession, config) {
 
                 //When finished processing packets, flush the buffers.
                 yield bufferWeb.send();
-                yield tcpTracker.send();
+                
+                if(config.tcpSessions.track) {
+                    yield tcpTracker.send();
+                }
 
                 if(config.dumpPackets.dumpToFile) {
                     yield bufferFile.send();

@@ -80,16 +80,16 @@ class TcpTracker{
 
         //only for TCP / IPV4 for now
         if (packet.payload.payload instanceof IPv4 && packet.payload.payload.payload instanceof TCP) {
-            var ip  = packet.payload.payload;
-            var tcp = ip.payload;
+            const ip  = packet.payload.payload;
+            const tcp = ip.payload;
 
-            var srcIp = ip.saddr.addr.join('.');
-            var dstIp = ip.daddr.addr.join('.');
+            const srcIp = ip.saddr.addr.join('.');
+            const dstIp = ip.daddr.addr.join('.');
 
-            var id = `${srcIp}:${tcp.sport}-${dstIp}:${tcp.dport}`;
-            var di = `${dstIp}:${tcp.dport}-${srcIp}:${tcp.sport}`;
+            const id = `${srcIp}:${tcp.sport}-${dstIp}:${tcp.dport}`;
+            const di = `${dstIp}:${tcp.dport}-${srcIp}:${tcp.sport}`;
 
-            var timeStamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
+            const timeStamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
 
             if (tcp.flags.syn && !tcp.flags.fin){ //initiating tcp connection : SYN flag -- not allowed with FIN
                 if(!this.sessions.has(id) && !this.sessions.has(id) && !tcp.flags.ack) { //request SYN ==> create session
