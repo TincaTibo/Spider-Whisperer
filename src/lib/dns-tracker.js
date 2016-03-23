@@ -34,7 +34,7 @@ class DNSTracker {
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: config.dnsCache.spiderConfigTimeout //ms
+            timeout: moment.duration(config.dnsCache.spiderConfigTimeout)
         };
     }
 

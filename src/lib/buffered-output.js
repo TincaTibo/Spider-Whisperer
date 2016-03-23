@@ -9,6 +9,7 @@
 const Config = require ('./../config/config').WhispererConfig;
 const debug = require ('debug')('buffered-output');
 const Q = require('q');
+const moment = require('moment');
 
 /**
  * A buffer to bufferize output of pcap packets before sending to {@link BufferedOutput.sender} when buffer is bound to be full
@@ -23,7 +24,7 @@ class BufferedOutput {
      * @constructor
      */
     constructor(sender, options){
-        var sizeKB = options.sizeKB ? options.sizeKB : 100;
+        const sizeKB = options.sizeKB || 100;
 
         this.buf = new Buffer(sizeKB * 1024);
         this.sender = sender;
@@ -31,13 +32,13 @@ class BufferedOutput {
         this.item = 0;
         this.firstPacketTimestamp = null;
 
-        if(options.delaySec){
+        if(options.delay){
             //Set timeout for sending buffer if not enough packets (but still some)
             setInterval(function (that) {
                 if(that.bytes){
                     that.send().fail(errorSending);
                 }
-            }, options.delaySec * 1000, this);
+            }, moment.duration(options.delay), this);
         }
     }
 

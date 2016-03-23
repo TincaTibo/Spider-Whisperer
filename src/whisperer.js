@@ -76,7 +76,7 @@ function startDropWatcher(pcapSession) {
  */
 function startListeners(pcapSession, config) {
     //Initialize buffer for sending packets over the network
-    let bufferWeb = new BufferedOutput(new WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delaySec: config.packets.sendBufferDelaySec});
+    let bufferWeb = new BufferedOutput(new WebSender(pcapSession.link_type, config), {sizeKB : config.packets.sendBufferSizekB, delay: config.packets.sendBufferDelay});
 
     //If we want to log also to file
     let bufferFile;

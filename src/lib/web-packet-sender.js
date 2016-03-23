@@ -14,6 +14,7 @@ const async = require('async');
 const debug = require('debug')('web-packet-sender');
 const Q = require('q');
 const PacketSender = require('./packet-sender');
+const moment = require('moment');
 
 /**
  * Object to send packets on the web to Spider server
@@ -39,7 +40,7 @@ class WebSender extends PacketSender {
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: config.packets.spiderPackTimeout //ms
+            timeout: moment.duration(config.packets.spiderPackTimeout)
         };
     };
 

@@ -11,6 +11,7 @@ const zlib = require('zlib');
 const request = require('../utils/requestAsPromise');
 const debug = require('debug')('tcp-sessions-tracker');
 const Q = require('q');
+const moment = require('moment');
 
 const IPv4 = require('pcap/decode/ipv4');
 const TCP = require('pcap/decode/tcp');
@@ -37,7 +38,7 @@ class TcpTracker{
         this.sessions = new Map;
         this.updated = false;
         this.lastSentDate = 0;
-        this.sessionTimeOutSec = config.tcpSessions.sessionTimeOutSec ? config.tcpSessions.sessionTimeOutSec : 120; //a session without packets for 2 minutes is deleted
+        this.sessionTimeOutSec = config.tcpSessions.sessionTimeOutSec || 120; //a session without packets for 2 minutes is deleted
         this.stats = {
             nbPacketsTracked: 0,
             nbPacketsNotTCP:0,
@@ -52,7 +53,7 @@ class TcpTracker{
                 debug(`Error while sending sessions: ${err.message}`);
                 console.error(err);
             });
-        }, config.tcpSessions.sendSessionDelaySec * 1000, this);
+        }, moment.duration(config.tcpSessions.sendSessionDelay), this);
 
         //Options to export to Spider-Tcp
         this.options = {
@@ -64,7 +65,7 @@ class TcpTracker{
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: config.tcpSessions.spiderPackTimeout //ms
+            timeout: moment.duration(config.tcpSessions.spiderTCPSTreamsTimeout)
         };
     }
 
