@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Minimum viable product
+- Use moment in config
 - Add tests (and CI)
 - Add config interface to send capture to (one network card for capture, the other to send capture)
 - Have token expected to be given at a parameter / could be generated at first start of Docker

@@ -40,7 +40,7 @@ class WebSender extends PacketSender {
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: moment.duration(config.packets.spiderPackTimeout)
+            timeout: moment.duration(config.packets.spiderPackTimeout).asMilliseconds()
         };
     };
 

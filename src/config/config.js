@@ -63,7 +63,7 @@ class WhispererConfig {
         this.tcpSessions.track = true;
         this.tcpSessions.spiderTcpStreamsURI = 'http://localhost:3001/tcp-sessions/v1';
         this.tcpSessions.sendSessionDelay = 'PT5S';
-        this.tcpSessions.sessionTimeOutSec = 120;
+        this.tcpSessions.sessionTimeOut = 'PT2M';
         this.tcpSessions.spiderTCPSTreamsTimeout = 'PT2S';
 
         whispererConfig = this;

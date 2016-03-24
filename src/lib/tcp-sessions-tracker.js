@@ -38,7 +38,7 @@ class TcpTracker{
         this.sessions = new Map;
         this.updated = false;
         this.lastSentDate = 0;
-        this.sessionTimeOutSec = config.tcpSessions.sessionTimeOutSec || 120; //a session without packets for 2 minutes is deleted
+        this.sessionTimeOut = moment.duration(config.tcpSessions.sessionTimeOut || 'PT2M'); //a session without packets for 2 minutes is deleted
         this.stats = {
             nbPacketsTracked: 0,
             nbPacketsNotTCP:0,
@@ -65,7 +65,7 @@ class TcpTracker{
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: moment.duration(config.tcpSessions.spiderTCPSTreamsTimeout)
+            timeout: moment.duration(config.tcpSessions.spiderTCPSTreamsTimeout).asMilliseconds()
         };
     }
 
@@ -235,9 +235,13 @@ class TcpTracker{
     send() {
         const that = this;
         return Q.async(function * (){
-            const currentDate = new Date().getTime() / 1e3;
+            const currentDate = moment();
 
-            if (that.updated || (that.config.capture.mode === Config.INTERFACE && (currentDate - that.lastSentDate) > that.sessionTimeOutSec)) { //send only if new packets were registered or if we got to remove sessions
+            if (that.updated || (that.config.capture.mode === Config.INTERFACE
+                                 && this.lastSentDate
+                                 && currentDate.isAfter(that.lastSentDate.add(that.sessionTimeOut))
+                                )
+               ) { //send only if new packets were registered or if we got to remove sessions
                 that.updated = false;
 
                 let sessionsToSend = {};
@@ -259,12 +263,12 @@ class TcpTracker{
                     if (session.state === TCP_STATUS.CLOSED) {
                         sessionsToDelete.push(id);
                     }
-                    else if(that.config.capture.mode === Config.INTERFACE && ((currentDate - session.lastTimestamp) > that.sessionTimeOutSec)){
+                    else if(that.config.capture.mode === Config.INTERFACE && ((currentDate - session.lastTimestamp) > that.sessionTimeOut)){
                         debug(`Session ${session['@id']} too old, closing it.`);
                         sessionsToDelete.push(id);
                     }
                 }, that);
-                that.lastSentDate = maxTimestamp;
+                that.lastSentDate = moment.unix(maxTimestamp);
                 
                 if(Object.keys(sessionsToSend).length) {
                     debug(`Sending ${Object.keys(sessionsToSend).length} sessions out of ${that.sessions.size}.`);
