@@ -1,7 +1,7 @@
 'use strict';
 
 const Q = require('q');
-const debug = require('debug')('dns-cache');
+const debug = require('debug')('dns-tracker');
 const DNSCache = require('./dns-cache');
 const moment = require('moment');
 const request = require('../utils/requestAsPromise');
