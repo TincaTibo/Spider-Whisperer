@@ -31,15 +31,15 @@ const FILE = 'FILE';
 class WhispererConfig {
     constructor (source, token) {
         if(!(source['@type'] === 'sp:whisperer-config' && source.version === EXPECTED_VERSION
-                && _.isString(source.capture.mode) && _.isString(source.capture.file) && _.isString(source.capture.interface)
-                && _.isString(source.capture.filter) && _.isInteger(source.capture.captureBufferkB)
-                && _.isString(source.packets.spiderPackURI) && _.isString(source.packets.spiderPackTimeout) && _.isInteger(source.packets.sendBufferSizekB)
-                && _.isString(source.packets.sendBufferDelay)
-                && _.isBoolean(source.dumpPackets.dumpToFile) && _.isString(source.dumpPackets.outputPath) && _.isInteger(source.dumpPackets.fileBufferSizekB)
-                && _.isBoolean(source.dnsCache.trackIp) && _.isString(source.dnsCache.ttl) && _.isString(source.dnsCache.sendDelay)
-                && _.isString(source.dnsCache.purgeDelay) && _.isString(source.dnsCache.spiderConfigURI) && _.isString(source.dnsCache.spiderConfigTimeout)
-                && _.isBoolean(source.tcpSessions.track) && _.isString(source.tcpSessions.spiderTcpStreamsURI) && _.isString(source.tcpSessions.sendSessionDelay)
-                && _.isString(source.tcpSessions.sessionTimeOut) && _.isString(source.tcpSessions.spiderTCPSTreamsTimeout)
+                && _.isString(source.client.capture.mode) && _.isString(source.client.capture.file) && _.isString(source.client.capture.interface)
+                && _.isString(source.client.capture.filter) && _.isInteger(source.client.capture.captureBufferkB)
+                && _.isString(source.client.packets.spiderPackURI) && _.isString(source.client.packets.spiderPackTimeout) && _.isInteger(source.client.packets.sendBufferSizekB)
+                && _.isString(source.client.packets.sendBufferDelay)
+                && _.isBoolean(source.client.dumpPackets.dumpToFile) && _.isString(source.client.dumpPackets.outputPath) && _.isInteger(source.client.dumpPackets.fileBufferSizekB)
+                && _.isBoolean(source.client.dnsCache.trackIp) && _.isString(source.client.dnsCache.ttl) && _.isString(source.client.dnsCache.sendDelay)
+                && _.isString(source.client.dnsCache.purgeDelay) && _.isString(source.client.dnsCache.spiderConfigURI) && _.isString(source.client.dnsCache.spiderConfigTimeout)
+                && _.isBoolean(source.client.tcpSessions.track) && _.isString(source.client.tcpSessions.spiderTcpStreamsURI) && _.isString(source.client.tcpSessions.sendSessionDelay)
+                && _.isString(source.client.tcpSessions.sessionTimeOut) && _.isString(source.client.tcpSessions.spiderTCPSTreamsTimeout)
             )){
             throw new Error('The provided configuration is not valid.');
         }
@@ -87,7 +87,7 @@ class WhispererConfig {
         this.tcpSessions.sessionTimeOut = null;
         this.tcpSessions.spiderTCPSTreamsTimeout = null;
 
-        _.assign(this, source);
+        _.assign(this, source.client);
 
         whispererConfig = this;
     }
