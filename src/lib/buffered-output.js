@@ -87,7 +87,7 @@ class BufferedOutput {
             this.firstPacketTimestamp = packet.pcap_header.tv_sec + packet.pcap_header.tv_usec/1e6;
         }
 
-        return `${Config.getInstance().token}.${this.firstPacketTimestamp}.${this.item}`;
+        return `${Config.getInstance().whisperer}.${this.firstPacketTimestamp}.${this.item}`;
     }
 }
 

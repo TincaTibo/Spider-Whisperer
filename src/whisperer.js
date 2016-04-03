@@ -184,7 +184,25 @@ Q.async(function *(){
     privsCheck();
 
     // Start the capture
-    const config = yield Config.WhispererConfig.initConfig();
+    //TODO: get parameters from outside
+    const config = yield Config.WhispererConfig.initConfig(
+        'http://localhost:3004',
+        'b46227d9-1f72-44fd-a2f5-95930aed1bc0',
+        `-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQCvbEClXmvNzdhvYJGCn/aeXaFqRaI630G01TBR0l6Vd7uFbP1X
+hLu7SusTFKUTtxzZLAToaQo13nqri21wudkAaagOMAmFOC2cZXA9POoe0hCteSSC
+4//JEr9sK8Rcd98zG1IHoKtAi5i2MPO5iMWsxHKcV3jxHkvCjal8G2mNuQIDAQAB
+AoGBAKPPs+J49LR/h6AiDl9rnzGtf4Esu1y8hLAn8HJHv1lWML9c0oq6gVBZmoD7
+41cwxHisWXzqMcWyFt1AWxdMBS2Isgsywzu+yVV1fProiAvKh4aN3JHgvQLDGkgZ
+PWJNenXBqfQMNA4fxgNSjeatw7UUlGQ1iN4m9knpYJg85lNdAkEA1T7jDcg5M+Zl
+Gy0k6uoNSpvUjjzH770gLqqcqUmijg2qa4Ki2AbaBf/1nxlqpju7sEr7caD7x56P
+0LOj2+GK2wJBANKYD6smCKGoXerXEuSJqknWon1wExPjmwpRj3+C9vDY2E+iU5Hb
+JJwgS8aiRUx4KyFXkUMFcTZyw+4L7cSdC/sCQFn818QRIlKMf04glturOUCq0d/U
+Nmss3E/VH5cww7A+hBQqZJ3VBlxRz0z8ZM0Rl/qlKcahsJ5kgzwHErbPTtECQQC3
+xnkN6u/nWs0yjaNwCm6vZv1/p5kOZzY6J/io1rn2bdU+kTKKewmUsV5PJfaBh/Bj
+dU5PhWVJlZdDmedRB5eXAkBNlm4fYuGcvI605JvXrybmN/jLDoqEAOoNCs6Y5FT3
+scB82k9Lpq07dTiAhjwoQI2yFw0fcMOEzoS5Xr8Z4cOK
+-----END RSA PRIVATE KEY-----`);
 
     try {
         var pcapSession = startCaptureSession(config);

@@ -7,6 +7,11 @@
 "use strict";
 
 const Q = require('q');
+const _ = require('lodash');
+const moment = require('moment');
+const ursa = require('ursa');
+const request = require('../utils/requestAsPromise');
+const debug = require('debug')('config');
 
 /**
  * Current config
@@ -14,57 +19,75 @@ const Q = require('q');
  * @type {WhispererConfig}
  */
 var whispererConfig = null;
+const EXPECTED_VERSION = "0.1";
 
-const INTERFACE = Symbol('INTERFACE');
-const FILE = Symbol('FILE');
+const INTERFACE = 'INTERFACE';
+const FILE = 'FILE';
 
 /**
  * Configuration fetcher for Whisperer
  * @class
  */
 class WhispererConfig {
-    //TODO : use moment and ISO everywhere
-    constructor () {
-        this.token = 'test';
+    constructor (source, token) {
+        if(!(source['@type'] === 'sp:whisperer-config' && source.version === EXPECTED_VERSION
+                && _.isString(source.capture.mode) && _.isString(source.capture.file) && _.isString(source.capture.interface)
+                && _.isString(source.capture.filter) && _.isInteger(source.capture.captureBufferkB)
+                && _.isString(source.packets.spiderPackURI) && _.isString(source.packets.spiderPackTimeout) && _.isInteger(source.packets.sendBufferSizekB)
+                && _.isString(source.packets.sendBufferDelay)
+                && _.isBoolean(source.dumpPackets.dumpToFile) && _.isString(source.dumpPackets.outputPath) && _.isInteger(source.dumpPackets.fileBufferSizekB)
+                && _.isBoolean(source.dnsCache.trackIp) && _.isString(source.dnsCache.ttl) && _.isString(source.dnsCache.sendDelay)
+                && _.isString(source.dnsCache.purgeDelay) && _.isString(source.dnsCache.spiderConfigURI) && _.isString(source.dnsCache.spiderConfigTimeout)
+                && _.isBoolean(source.tcpSessions.track) && _.isString(source.tcpSessions.spiderTcpStreamsURI) && _.isString(source.tcpSessions.sendSessionDelay)
+                && _.isString(source.tcpSessions.sessionTimeOut) && _.isString(source.tcpSessions.spiderTCPSTreamsTimeout)
+            )){
+            throw new Error('The provided configuration is not valid.');
+        }
+
+        this.token = token;
+
+        this.whisperer = null;
 
         //Capture parameters
         this.capture = {};
-        this.capture.mode = FILE; // INTERFACE OR FILE
-        this.capture.file = '../test/test-parkeon.com2.pcap';
-        this.capture.interface = 'wlan1';
-        this.capture.filter = 'tcp port 80';
-        this.capture.captureBufferkB = 10;
+        this.capture.mode = null;
+        this.capture.file = null;
+        this.capture.interface = null;
+        this.capture.filter = null;
+        this.capture.captureBufferkB = null;
 
         //For packets
         this.packets = {};
-        this.packets.spiderPackURI = 'http://localhost:3000/packets/v1';
-        this.packets.spiderPackTimeout = 'PT2S';
+        this.packets.spiderPackURI = null;
+        this.packets.spiderPackTimeout = null;
         //Packet saving to Spider
-        this.packets.sendBufferSizekB = 100;
-        this.packets.sendBufferDelay = 'PT5S';
+        this.packets.sendBufferSizekB = null;
+        this.packets.sendBufferDelay = null;
 
         //Packet saving to file
         this.dumpPackets = {};
-        this.dumpPackets.dumpToFile = true;
-        this.dumpPackets.fileBufferSizekB = 1000;
-        this.dumpPackets.outputPath = '../logs';
+        this.dumpPackets.dumpToFile = null;
+        this.dumpPackets.fileBufferSizekB = null;
+        this.dumpPackets.outputPath = null;
 
         //For DNS reversal
         this.dnsCache = {};
-        this.dnsCache.trackIp = true;
-        this.dnsCache.ttl = 'P1D';
-        this.dnsCache.sendDelay = 'PT20S';
-        this.dnsCache.purgeDelay = 'PT1H';
-        this.dnsCache.spiderConfigURI = 'http://localhost:3003/';
-        this.dnsCache.spiderConfigTimeout = 'PT2S';
+        this.dnsCache.trackIp = null;
+        this.dnsCache.ttl = null;
+        this.dnsCache.sendDelay = null;
+        this.dnsCache.purgeDelay = null;
+        this.dnsCache.spiderConfigURI = null;
+        this.dnsCache.spiderConfigTimeout = null;
 
         //For sessions
         this.tcpSessions = {};
-        this.tcpSessions.track = true;
-        this.tcpSessions.spiderTcpStreamsURI = 'http://localhost:3001/tcp-sessions/v1';
-        this.tcpSessions.sendSessionDelay = 'PT5S';
-        this.tcpSessions.sessionTimeOut = 'PT2M';
-        this.tcpSessions.spiderTCPSTreamsTimeout = 'PT2S';
+        this.tcpSessions.track = null;
+        this.tcpSessions.spiderTcpStreamsURI = null;
+        this.tcpSessions.sendSessionDelay = null;
+        this.tcpSessions.sessionTimeOut = null;
+        this.tcpSessions.spiderTCPSTreamsTimeout = null;
+
+        _.assign(this, source);
 
         whispererConfig = this;
     }
@@ -73,8 +96,39 @@ class WhispererConfig {
      * Get configuration from Spider
      * @returns {WhispererConfig}
      */
-    static initConfig(){
-        return Q(new WhispererConfig());
+    static initConfig(spiderWhispsURI, whispererId, privatePem){
+        return Q.async(function * (){
+            const timeStamp = moment().toISOString();
+            const info = {
+                timeStamp: timeStamp,
+                whispererId: whispererId
+            };
+            const privKey = ursa.createPrivateKey(privatePem);
+            const signature = privKey.hashAndSign('sha256', JSON.stringify(info), 'utf8', 'base64');
+
+            const options = {
+                method: 'GET',
+                uri: `${spiderWhispsURI}/whisperers/${whispererId}/config/v1`,
+                headers: {
+                    'Accept': 'application/ld+json',
+                    'Accept-Encoding': 'gzip',
+                    'Spider-TimeStamp': timeStamp,
+                    'Spider-Signature': signature
+                },
+                gzip: true,
+                json: true,
+                time: true, //monitors the request
+                timeout: 2000 //ms
+            };
+
+            let res = yield request(options);
+            debug(`Getting configuration: ResponseStatus: ${res.response.statusCode} in ${res.response.elapsedTime}ms.`);
+            if (res.response.statusCode !== 200) {
+                debug(res.body);
+            }
+
+            return new WhispererConfig(res.body, res.response.headers['spider-token']);
+        })();
     }
 
     /**
