@@ -1,14 +1,13 @@
 # Roadmap
 
 ## Minimum viable product
-- Use moment in config
 - Add tests (and CI)
 - Add config interface to send capture to (one network card for capture, the other to send capture)
-- Have token expected to be given at a parameter / could be generated at first start of Docker
-- Get configuration from conf server based on token
+- Have apikey expected to be given at a parameter
+- Limit the rights necessary for whisperer (root currently)
+- Call Poller Config every x minutes to check for change. Kill and restart. 1 hour before EoL of JWT token, reconnect with ApiKey to get a new one. 
+- Have whisperer in OpenSource to ensure no spyware... LoL
 - JSON-LD contexts
-- Authentication
-- Security
 - HealthCheck
 - Documentation
   * Readme

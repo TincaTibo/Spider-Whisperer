@@ -15,6 +15,7 @@ const debug = require('debug')('web-packet-sender');
 const Q = require('q');
 const PacketSender = require('./packet-sender');
 const moment = require('moment');
+const Config = require('../config/config');
 
 /**
  * Object to send packets on the web to Spider server
@@ -62,6 +63,7 @@ class WebSender extends PacketSender {
                 
             that.options.body = zbf;
             that.options.headers['Content-Length'] = zbf.length;
+            that.options.headers['Authorization'] = `Bearer ${Config.getInstance().token}`;
 
             //send the request to Spider
             let res = yield request(that.options);

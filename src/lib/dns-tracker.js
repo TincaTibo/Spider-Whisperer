@@ -6,6 +6,7 @@ const DNSCache = require('./dns-cache');
 const moment = require('moment');
 const request = require('../utils/requestAsPromise');
 const zlib = require('zlib');
+const Config = require('../config/config');
 
 const IPv4 = require('pcap/decode/ipv4');
 
@@ -65,6 +66,7 @@ class DNSTracker {
 
                 that.options.body = zbf;
                 that.options.headers['Content-Length'] = zbf.length;
+                that.options.headers['Authorization'] = `Bearer ${Config.getInstance().token}`;
 
                 const res = yield request(that.options);
 
