@@ -44,8 +44,6 @@ class WhispererConfig {
             throw new Error('The provided configuration is not valid.');
         }
 
-        this.token = token;
-
         this.whisperer = null;
 
         //Capture parameters
@@ -88,6 +86,8 @@ class WhispererConfig {
         this.tcpSessions.spiderTCPSTreamsTimeout = null;
 
         _.assign(this, source.client);
+
+        this.token = token;
 
         whispererConfig = this;
     }
