@@ -135,7 +135,7 @@ class WhispererConfig {
      * Return current instance
      * @returns {WhispererConfig}
      */
-    static getInstance () {
+    static getInstance() {
         return whispererConfig;
     }
 }

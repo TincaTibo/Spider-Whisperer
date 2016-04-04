@@ -6,7 +6,7 @@ const DNSCache = require('./dns-cache');
 const moment = require('moment');
 const request = require('../utils/requestAsPromise');
 const zlib = require('zlib');
-const Config = require('../config/config');
+const Config = require('../config/config').WhispererConfig;
 
 const IPv4 = require('pcap/decode/ipv4');
 

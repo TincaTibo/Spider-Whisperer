@@ -15,7 +15,7 @@ const debug = require('debug')('web-packet-sender');
 const Q = require('q');
 const PacketSender = require('./packet-sender');
 const moment = require('moment');
-const Config = require('../config/config');
+const Config = require('../config/config').WhispererConfig;
 
 /**
  * Object to send packets on the web to Spider server

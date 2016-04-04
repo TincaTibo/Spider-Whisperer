@@ -289,7 +289,7 @@ class TcpTracker{
 
                     that.options.body = zbf;
                     that.options.headers['Content-Length'] = zbf.length;
-                    that.options.headers['Authorization'] = `Bearer ${Config.getInstance().token}`;
+                    that.options.headers['Authorization'] = `Bearer ${Config.WhispererConfig.getInstance().token}`;
 
                     const res = yield request(that.options);
 
