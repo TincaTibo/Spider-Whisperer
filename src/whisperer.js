@@ -38,13 +38,14 @@ function startCaptureSession(config) {
     switch(config.capture.mode){
         case Config.FILE:
             pcapSession = pcap.createOfflineSession(config.capture.file, config.capture.filter);
+            console.log(`Parsing file ${config.capture.file}`);
             break;
         case Config.INTERFACE:
             pcapSession = pcap.createSession(config.capture.interface, config.capture.filter, (config.capture.captureBufferkB * 1024 * 1024));
+            console.log(`Listening on ${pcapSession.device_name}`);
             break;
     }
 
-    console.log('Listening on ' + pcapSession.device_name);
     return pcapSession;
 }
 
@@ -209,6 +210,7 @@ scB82k9Lpq07dTiAhjwoQI2yFw0fcMOEzoS5Xr8Z4cOK
     }
     catch(e){
         console.error(`Error: ${e.message}. Could not start capture, check your options.`);
+        debug(e.stack);
         process.exit(0);
     }
 
