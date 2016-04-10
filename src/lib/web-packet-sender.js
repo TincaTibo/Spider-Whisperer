@@ -34,14 +34,14 @@ class WebSender extends PacketSender {
         //Options to export to Spider-Pack
         this.options = {
             method: 'POST',
-            uri: config.packets.spiderPackURI,
+            uri: config.packets.spiderURI,
             headers: {
                 'Content-Type': 'application/vnd.tcpdump.pcap',
                 'Content-Encoding': 'gzip'
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: moment.duration(config.packets.spiderPackTimeout).asMilliseconds()
+            timeout: moment.duration(config.packets.spiderTimeout).asMilliseconds()
         };
     };
 

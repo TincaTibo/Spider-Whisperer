@@ -58,14 +58,14 @@ class TcpTracker{
         //Options to export to Spider-Tcp
         this.options = {
             method: 'POST',
-            uri: config.tcpSessions.spiderTcpStreamsURI,
+            uri: config.tcpSessions.spiderURI,
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Encoding': 'gzip'
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: moment.duration(config.tcpSessions.spiderTCPSTreamsTimeout).asMilliseconds()
+            timeout: moment.duration(config.tcpSessions.spiderTimeout).asMilliseconds()
         };
     }
 

@@ -28,14 +28,14 @@ class DNSTracker {
         //Options to export to Spider-Config
         this.options = {
             method: 'POST',
-            uri: config.dnsCache.spiderConfigURI,
+            uri: `${config.dnsCache.spiderURI}/${config.whisperer}/hosts/v1`,
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Encoding': 'gzip'
             },
             gzip: true,
             time: true, //monitors the request
-            timeout: moment.duration(config.dnsCache.spiderConfigTimeout).asMilliseconds()
+            timeout: moment.duration(config.dnsCache.spiderTimeout).asMilliseconds()
         };
     }
 

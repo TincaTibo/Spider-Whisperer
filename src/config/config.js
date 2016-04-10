@@ -33,13 +33,13 @@ class WhispererConfig {
         if(!(source['@type'] === 'sp:whisperer-config' && source.version === EXPECTED_VERSION
                 && _.isString(source.capture.mode) && _.isString(source.capture.file) && _.isString(source.capture.interface)
                 && _.isString(source.capture.filter) && _.isInteger(source.capture.captureBufferkB)
-                && _.isString(source.packets.spiderPackURI) && _.isString(source.packets.spiderPackTimeout) && _.isInteger(source.packets.sendBufferSizekB)
+                && _.isString(source.packets.spiderURI) && _.isString(source.packets.spiderTimeout) && _.isInteger(source.packets.sendBufferSizekB)
                 && _.isString(source.packets.sendBufferDelay)
                 && _.isBoolean(source.dumpPackets.dumpToFile) && _.isString(source.dumpPackets.outputPath) && _.isInteger(source.dumpPackets.fileBufferSizekB)
                 && _.isBoolean(source.dnsCache.trackIp) && _.isString(source.dnsCache.ttl) && _.isString(source.dnsCache.sendDelay)
-                && _.isString(source.dnsCache.purgeDelay) && _.isString(source.dnsCache.spiderConfigURI) && _.isString(source.dnsCache.spiderConfigTimeout)
-                && _.isBoolean(source.tcpSessions.track) && _.isString(source.tcpSessions.spiderTcpStreamsURI) && _.isString(source.tcpSessions.sendSessionDelay)
-                && _.isString(source.tcpSessions.sessionTimeOut) && _.isString(source.tcpSessions.spiderTCPSTreamsTimeout)
+                && _.isString(source.dnsCache.purgeDelay) && _.isString(source.dnsCache.spiderURI) && _.isString(source.dnsCache.spiderTimeout)
+                && _.isBoolean(source.tcpSessions.track) && _.isString(source.tcpSessions.spiderURI) && _.isString(source.tcpSessions.sendSessionDelay)
+                && _.isString(source.tcpSessions.sessionTimeOut) && _.isString(source.tcpSessions.spiderTimeout)
             )){
             throw new Error('The provided configuration is not valid.');
         }
@@ -56,8 +56,8 @@ class WhispererConfig {
 
         //For packets
         this.packets = {};
-        this.packets.spiderPackURI = null;
-        this.packets.spiderPackTimeout = null;
+        this.packets.spiderURI = null;
+        this.packets.spiderTimeout = null;
         //Packet saving to Spider
         this.packets.sendBufferSizekB = null;
         this.packets.sendBufferDelay = null;
@@ -74,16 +74,16 @@ class WhispererConfig {
         this.dnsCache.ttl = null;
         this.dnsCache.sendDelay = null;
         this.dnsCache.purgeDelay = null;
-        this.dnsCache.spiderConfigURI = null;
-        this.dnsCache.spiderConfigTimeout = null;
+        this.dnsCache.spiderURI = null;
+        this.dnsCache.spiderTimeout = null;
 
         //For sessions
         this.tcpSessions = {};
         this.tcpSessions.track = null;
-        this.tcpSessions.spiderTcpStreamsURI = null;
+        this.tcpSessions.spiderURI = null;
+        this.tcpSessions.spiderTimeout = null;
         this.tcpSessions.sendSessionDelay = null;
         this.tcpSessions.sessionTimeOut = null;
-        this.tcpSessions.spiderTCPSTreamsTimeout = null;
 
         _.assign(this, source);
 

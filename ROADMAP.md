@@ -1,14 +1,13 @@
 # Roadmap
 
 ## Minimum viable product
+- HealthCheck
+- Call Poller Config every x minutes to check for change. Kill and restart. 1 hour before EoL of JWT token, reconnect with ApiKey to get a new one.
 - Add tests (and CI)
 - Add config interface to send capture to (one network card for capture, the other to send capture)
-- Have apikey expected to be given at a parameter
-- Limit the rights necessary for whisperer (root currently)
-- Call Poller Config every x minutes to check for change. Kill and restart. 1 hour before EoL of JWT token, reconnect with ApiKey to get a new one. 
+- Limit the rights necessary for whisperer (root currently) 
 - Have whisperer in OpenSource to ensure no spyware... LoL
 - JSON-LD contexts
-- HealthCheck
 - Documentation
   * Readme
   * Architecture
