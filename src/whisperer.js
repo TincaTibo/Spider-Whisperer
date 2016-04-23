@@ -188,21 +188,21 @@ Q.async(function *(){
     //TODO: get parameters from outside
     const config = yield Config.WhispererConfig.initConfig(
         'http://localhost:3004',
-        'b46227d9-1f72-44fd-a2f5-95930aed1bc0',
+        'gEqgh5xEQSC3SF8+P5XAkA==',
         `-----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAKBgQCvbEClXmvNzdhvYJGCn/aeXaFqRaI630G01TBR0l6Vd7uFbP1X
-hLu7SusTFKUTtxzZLAToaQo13nqri21wudkAaagOMAmFOC2cZXA9POoe0hCteSSC
-4//JEr9sK8Rcd98zG1IHoKtAi5i2MPO5iMWsxHKcV3jxHkvCjal8G2mNuQIDAQAB
-AoGBAKPPs+J49LR/h6AiDl9rnzGtf4Esu1y8hLAn8HJHv1lWML9c0oq6gVBZmoD7
-41cwxHisWXzqMcWyFt1AWxdMBS2Isgsywzu+yVV1fProiAvKh4aN3JHgvQLDGkgZ
-PWJNenXBqfQMNA4fxgNSjeatw7UUlGQ1iN4m9knpYJg85lNdAkEA1T7jDcg5M+Zl
-Gy0k6uoNSpvUjjzH770gLqqcqUmijg2qa4Ki2AbaBf/1nxlqpju7sEr7caD7x56P
-0LOj2+GK2wJBANKYD6smCKGoXerXEuSJqknWon1wExPjmwpRj3+C9vDY2E+iU5Hb
-JJwgS8aiRUx4KyFXkUMFcTZyw+4L7cSdC/sCQFn818QRIlKMf04glturOUCq0d/U
-Nmss3E/VH5cww7A+hBQqZJ3VBlxRz0z8ZM0Rl/qlKcahsJ5kgzwHErbPTtECQQC3
-xnkN6u/nWs0yjaNwCm6vZv1/p5kOZzY6J/io1rn2bdU+kTKKewmUsV5PJfaBh/Bj
-dU5PhWVJlZdDmedRB5eXAkBNlm4fYuGcvI605JvXrybmN/jLDoqEAOoNCs6Y5FT3
-scB82k9Lpq07dTiAhjwoQI2yFw0fcMOEzoS5Xr8Z4cOK
+MIICXAIBAAKBgQDBaJapFeicnlmHC6gmKJXnGsJdG0R169TSgn5akTRpwS+bqXW9
+EAK2iz6GMBq0UElu3g2wwXC9ozrXFgRQJjLuP3L5wU6fXzE3BHEbC2bGfccZxmGS
+lGBycwyp5cYlHKWSmE5Mill1oUJUFXZfb90l2VYRw5rdv5o7+Ad8DaNNjwIDAQAB
+AoGAYUExeWb96DusMz9GV6HS9zo6gE0k2NM02oIp/WrE22T8hp7pCKATbS2JzDpG
+Q2OX+XsJkVdEVOfOv7dfhdofg1PvVxs/QjAIWq2ykU85DVqvq/U00TdnUhnqDRGx
+7SrjtckzxlUI1xDwdZzMS2S1UFzlbPnPQwwuqblt4NZfsQECQQDuSiHjKHRYnRFH
+fyN+3kEpgNZjQl6WHdZB87KC9o9JCO3aZKoBjrqLQRBkZENlM/T7/8q/0rxvFrEk
+TiTbEtKBAkEAz8iEgsD2A3GkuVLEHhclzlnddkWs8R67mL88glWKZqwK5Nmg2aJH
++pw8L4WO/rc6N0FV3Z1qAW2o+3wMNZz4DwJAEoK5vS6wUw3ogLhUpo9XWoUConVO
+abTppvfqXxgOK2tBJtz5A+P1g8nLHzFWtu7hUg4dzubs8mg93Ichf88ngQJAE3Kb
+JHnXDN94IXhjrsVP3o5+sfE3jKHpwRQ1H6XN/Goh4uWTrosH3ab94xzHE4QmyMEu
+vj1bjKKs7Ezh/6qfdQJBAIfSvIN7d9mL/Qe7NqYWkFpf97dRidEsmd+NezHTYhoF
+zLNtl/OR4eue3++2cpdumE2pmfP1K8mZPUVO3XEK3bg=
 -----END RSA PRIVATE KEY-----`);
 
     try {

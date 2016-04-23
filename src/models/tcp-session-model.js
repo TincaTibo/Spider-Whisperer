@@ -20,7 +20,6 @@ const TCP_STATUS = {
 class TcpSession{
     constructor(packetId) {
         this['@id'] = `${packetId}`;
-        this['@type'] = 'sp:tcp-session';
         this.state = null;
 
         this.in = {
@@ -56,7 +55,7 @@ class TcpSession{
     add(direction, packet, packetId, timestamp){
         //Add packet to selection
         this[direction]['packets'].push(new TcpPacket({
-            packet: `pck:${packetId}`,
+            packet: packetId,
             tcpPayload: packet.payload.payload.payload.dataLength > 0,
             timestamp: timestamp
         }));
