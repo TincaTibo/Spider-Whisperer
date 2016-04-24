@@ -53,7 +53,7 @@ class TcpTracker{
                 debug(`Error while sending sessions: ${err.message}`);
                 console.error(err);
             });
-        }, moment.duration(config.tcpSessions.sendSessionDelay), this);
+        }, moment.duration(config.tcpSessions.sendSessionDelay).asMilliseconds(), this);
 
         //Options to export to Spider-Tcp
         this.options = {
@@ -238,7 +238,7 @@ class TcpTracker{
             const currentDate = moment();
 
             if (that.updated || (that.config.capture.mode === Config.INTERFACE
-                                 && this.lastSentDate
+                                 && that.lastSentDate
                                  && currentDate.isAfter(that.lastSentDate.add(that.sessionTimeOut))
                                 )
                ) { //send only if new packets were registered or if we got to remove sessions
@@ -251,7 +251,7 @@ class TcpTracker{
 
                 that.sessions.forEach((session, id) => {
                     //Send session updated since max timestamp processed since last sent
-                    if (session.lastTimestamp > that.lastSentDate) {
+                    if (!that.lastSentDate || that.lastSentDate.isBefore(moment.unix(session.lastTimestamp))) {
                         sessionsToSend[id] = session;
                     }
 

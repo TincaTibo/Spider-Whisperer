@@ -23,7 +23,7 @@ class DNSTracker {
                 debug(`Error while sending Hostnames to Spider: ${err.message}`);
                 console.error(err);
             });
-        }, moment.duration(config.dnsCache.sendDelay), this);
+        }, moment.duration(config.dnsCache.sendDelay).asMilliseconds(), this);
 
         //Options to export to Spider-Config
         this.options = {
