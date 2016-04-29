@@ -20,5 +20,8 @@
     "q-io": "^1.13.2",
     "request": "^2.69.0",
     "ursa": "^0.9.3"
+  },
+  "scripts": {
+    "start": "node ./whisperer.js"
   }
 }

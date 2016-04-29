@@ -94,7 +94,7 @@ class TcpTracker{
 
             if (tcp.flags.syn && !tcp.flags.fin){ //initiating tcp connection : SYN flag -- not allowed with FIN
                 if(!this.sessions.has(id) && !this.sessions.has(id) && !tcp.flags.ack) { //request SYN ==> create session
-                    this.sessions.set(id, new TcpSession(packetId));
+                    this.sessions.set(id, new TcpSession(packetId, srcIp, tcp.sport, dstIp, tcp.dport));
                     this.sessions.get(id).add(DIR_OUT,packet,packetId, timeStamp);
                     this.sessions.get(id).state = TCP_STATUS.SYN_SENT;
                     this.sessions.get(id).minOutSeq = tcp.seqno;
@@ -155,7 +155,7 @@ class TcpTracker{
             }
             else if(tcp.flags.ack){
                 if (this.sessions.has(id)){ //packet on an existing session
-                    this.sessions.get(id).add(DIR_OUT,packet,packetId, timeStamp);
+                    this.sessions.get(id).add(DIR_OUT, packet, packetId, timeStamp);
                     if (this.sessions.get(id).state === TCP_STATUS.SYN_RECEIVED ){
                         this.sessions.get(id).state = TCP_STATUS.ESTABLISHED;
                     }
@@ -164,7 +164,7 @@ class TcpTracker{
                     }
                 }
                 else if (this.sessions.has(di)){ //packet on an existing session
-                    this.sessions.get(di).add(DIR_IN,packet,packetId, timeStamp);
+                    this.sessions.get(di).add(DIR_IN, packet, packetId, timeStamp);
                     if (this.sessions.get(di).state === TCP_STATUS.SYN_RECEIVED){ //Should not happen in this direction
                         this.sessions.get(di).state = TCP_STATUS.ESTABLISHED;
                     }
@@ -175,7 +175,7 @@ class TcpTracker{
                 else if(tcp.payloadLength){ //Got a packet on a session not opened, so we create a new session if it got data
                     // We guess the direction (src port > dst port)
                     if (tcp.sport > tcp.dport){
-                        this.sessions.set(id, new TcpSession(packetId));
+                        this.sessions.set(id, new TcpSession(packetId, srcIp, tcp.sport, dstIp, tcp.dport));
                         this.sessions.get(id).add(DIR_OUT,packet,packetId, timeStamp);
                         this.sessions.get(id).state = TCP_STATUS.ESTABLISHED;
                         this.sessions.get(id).minOutSeq = tcp.seqno;
@@ -183,7 +183,7 @@ class TcpTracker{
                         this.sessions.get(id).missedSyn = true;
                     }
                     else {
-                        this.sessions.set(di, new TcpSession(packetId));
+                        this.sessions.set(di, new TcpSession(packetId, dstIp, tcp.dport, srcIp, tcp.sport));
                         this.sessions.get(di).add(DIR_IN,packet,packetId, timeStamp);
                         this.sessions.get(di).state = TCP_STATUS.ESTABLISHED;
                         this.sessions.get(di).minInSeq = tcp.seqno;

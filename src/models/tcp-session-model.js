@@ -18,10 +18,20 @@ const TCP_STATUS = {
 };
 
 class TcpSession{
-    constructor(packetId) {
+    constructor(packetId, srcIp, srcPort, dstIp, dstPort) {
         this['@id'] = `${packetId}`;
         this.state = null;
 
+        this.src = {
+            ip: srcIp,
+            port: srcPort
+        };
+
+        this.dst = {
+            ip: dstIp,
+            port: dstPort
+        };
+        
         this.in = {
             packets: [],
             ip: 0,
