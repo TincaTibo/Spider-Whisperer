@@ -92,7 +92,7 @@ function startListeners(pcapSession, config) {
 
     let tcpTracker;
     if(config.tcpSessions.track) {
-        tcpTracker = new TcpTracker(config);
+        tcpTracker = new TcpTracker(config, dnsTracker);
     }
 
     function processPacket(raw_packet, packet){

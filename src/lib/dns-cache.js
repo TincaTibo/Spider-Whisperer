@@ -15,7 +15,7 @@ class DNSCache {
     constructor(config) {
         this.cache = new Map;
         this.ttl = moment.duration(config.dnsCache.ttl);
-        
+
         //regular purge every day
         setInterval(that => that.purge(),
             moment.duration(config.dnsCache.purgeDelay), this);
@@ -25,19 +25,23 @@ class DNSCache {
         let that = this;
         return Q.async(function * (){
             const now = moment();
-            //If we have already stored this IP in cache
+            // If we have already stored this IP in cache
+            // And last update is sooner that ttl
+            // Update just the fact that we viewed it
             if (that.cache.get(ip)
                 && that.cache.get(ip).lastUpdate > moment().subtract(that.ttl)) {
 
                 that.cache.get(ip).lastSeen = now;
                 return that.cache.get(ip).hostname || ip;
             }
+            // We don't have it OR we want to update it because last update is old
             else {
                 that.cache.set(ip,{
                     hostname: null,
                     ip: ip,
                     lastUpdate: now,
-                    lastSeen: now
+                    lastSeen: now,
+                    type: null
                 });
 
                 try {
@@ -62,6 +66,24 @@ class DNSCache {
             }
         }
         return res;
+    }
+
+    getItems(){
+        return [...this.cache.values()];
+    }
+
+    setIpAsServer(ip){
+        //Set as server if not yet set as a server
+        if(this.cache.get(ip) && this.cache.get(ip).type !== 'SERVER') {
+            this.cache.get(ip).type = 'SERVER';
+        }
+    }
+
+    setIpAsClient(ip){
+        //Set as client if not yet set
+        if(this.cache.get(ip) && !this.cache.get(ip).type) {
+            this.cache.get(ip).type = 'CLIENT';
+        }
     }
     
     purge(){

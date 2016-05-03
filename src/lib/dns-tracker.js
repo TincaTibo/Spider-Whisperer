@@ -10,20 +10,30 @@ const Config = require('../config/config').WhispererConfig;
 
 const IPv4 = require('pcap/decode/ipv4');
 
+const FULL = Symbol();
+const UPDATE = Symbol();
+
 class DNSTracker {
     constructor(config) {
         this.dnsCache = new DNSCache(config);
         this.lastSentDate = moment();
         
         //on regular intervals, get DNSCache changes
-        //send the changes to Whisperer Config server
-        //hostnames are used on GUI for hostname display, but can be overriden by configuration on Whisperer Config
+        //send the changes to Spider
+        //hostnames are used on GUI for hostname display, but can be overriden by configuration on Whisps
         setInterval(that => {
-            that.send().fail(err => {
+            that.send(UPDATE).fail(err => {
                 debug(`Error while sending Hostnames to Spider: ${err.message}`);
                 console.error(err);
             });
-        }, moment.duration(config.dnsCache.sendDelay).asMilliseconds(), this);
+        }, moment.duration(config.dnsCache.sendUpdateDelay).asMilliseconds(), this);
+
+        setInterval(that => {
+            that.send(FULL).fail(err => {
+                debug(`Error while sending Hostnames to Spider: ${err.message}`);
+                console.error(err);
+            });
+        }, moment.duration(config.dnsCache.sendFullDelay).asMilliseconds(), this);
 
         //Options to export to Spider-Config
         this.options = {
@@ -40,24 +50,31 @@ class DNSTracker {
     }
 
     trackIpFromPacket(packet) {
-        if (packet.payload.payload instanceof IPv4){
-            const ip  = packet.payload.payload;
+        const that = this;
+        Q.async(function * (){
+            if (packet.payload.payload instanceof IPv4){
+                const ip  = packet.payload.payload;
 
-            const srcIp = ip.saddr.addr.join('.');
-            const dstIp = ip.daddr.addr.join('.');
+                const srcIp = ip.saddr.addr.join('.');
+                const dstIp = ip.daddr.addr.join('.');
 
-            const that = this;
-            //add IPs to DNS Cache
-            Q.async(function * (){
+                //add IPs to DNS Cache
                 yield Q.all([that.dnsCache.reverse(srcIp),that.dnsCache.reverse(dstIp)]);
-            })();
-        }
+            }
+        })().fail(err => console.error(err));
     }
     
-    send(){
+    send(type){
         let that = this;
         return Q.async(function * (){
-            let items = that.dnsCache.getItemsUpdatedSince(that.lastSentDate);
+            let items = null;
+
+            if(type === UPDATE){
+                items = that.dnsCache.getItemsUpdatedSince(that.lastSentDate);
+            }
+            else{
+                items = that.dnsCache.getItems();
+            }
             debug(`${items.length} items to send.`);
             
             if(items.length){
@@ -76,6 +93,14 @@ class DNSTracker {
                 }
             }
         })();
+    }
+
+    setIpAsServer(ip){
+        this.dnsCache.setIpAsServer(ip);
+    }
+
+    setIpAsClient(ip){
+        this.dnsCache.setIpAsClient(ip);
     }
 }
 

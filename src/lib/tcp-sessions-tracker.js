@@ -31,9 +31,10 @@ const MAX_TCP_FRAME = Math.pow(2,31);
 class TcpTracker{
     /**
      * @param {WhispererConfig} config
+     * @param {DNSTracker} dnsTracker
      * @constructor
      */
-    constructor(config){
+    constructor(config, dnsTracker){
         this.config = config;
         this.sessions = new Map;
         this.updated = false;
@@ -44,6 +45,8 @@ class TcpTracker{
             nbPacketsNotTCP:0,
             nbPacketsOutsideSessions:0
         };
+
+        this.dnsTracker = dnsTracker;
 
         //Set timeout for sending sessions regularly to the server
         //If changed
@@ -99,6 +102,13 @@ class TcpTracker{
                     this.sessions.get(id).state = TCP_STATUS.SYN_SENT;
                     this.sessions.get(id).minOutSeq = tcp.seqno;
                     this.sessions.get(id).synTimestamp = timeStamp;
+                    
+                    //since we are sure of who is client and who is server
+                    if (this.config.dnsCache.trackIp){
+                        //change ip mode to server
+                        this.dnsTracker.setIpAsServer(dstIp);
+                        this.dnsTracker.setIpAsClient(srcIp);
+                    }
                 }
                 else if (this.sessions.has(di) && tcp.flags.ack){ //response SYN
                     this.sessions.get(di).add(DIR_IN,packet,packetId, timeStamp);

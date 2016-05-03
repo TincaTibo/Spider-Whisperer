@@ -36,7 +36,8 @@ class WhispererConfig {
                 && _.isString(source.packets.spiderURI) && _.isString(source.packets.spiderTimeout) && _.isInteger(source.packets.sendBufferSizekB)
                 && _.isString(source.packets.sendBufferDelay)
                 && _.isBoolean(source.dumpPackets.dumpToFile) && _.isString(source.dumpPackets.outputPath) && _.isInteger(source.dumpPackets.fileBufferSizekB)
-                && _.isBoolean(source.dnsCache.trackIp) && _.isString(source.dnsCache.ttl) && _.isString(source.dnsCache.sendDelay)
+                && _.isBoolean(source.dnsCache.trackIp) && _.isString(source.dnsCache.ttl) && _.isString(source.dnsCache.sendFullDelay)
+                && _.isString(source.dnsCache.sendUpdateDelay)
                 && _.isString(source.dnsCache.purgeDelay) && _.isString(source.dnsCache.spiderURI) && _.isString(source.dnsCache.spiderTimeout)
                 && _.isBoolean(source.tcpSessions.track) && _.isString(source.tcpSessions.spiderURI) && _.isString(source.tcpSessions.sendSessionDelay)
                 && _.isString(source.tcpSessions.sessionTimeOut) && _.isString(source.tcpSessions.spiderTimeout)
@@ -72,7 +73,8 @@ class WhispererConfig {
         this.dnsCache = {};
         this.dnsCache.trackIp = null;
         this.dnsCache.ttl = null;
-        this.dnsCache.sendDelay = null;
+        this.dnsCache.sendUpdateDelay = null;
+        this.dnsCache.sendFullDelay = null;
         this.dnsCache.purgeDelay = null;
         this.dnsCache.spiderURI = null;
         this.dnsCache.spiderTimeout = null;
