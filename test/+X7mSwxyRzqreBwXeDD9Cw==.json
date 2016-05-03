@@ -1,0 +1,73 @@
+{
+  "_index": "whisp",
+  "_type": "whisperer",
+  "_id": "+X7mSwxyRzqreBwXeDD9Cw==",
+  "_version": 4,
+  "found": true,
+  "_source": {
+    "@id": "+X7mSwxyRzqreBwXeDD9Cw==",
+    "name": "test",
+    "customer": "Spider",
+    "apikey": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDdkFxZjdmOWRhRVF2amZURk8rSnJGMytCbAp6REg0U3BCMUl6TnJiRlRqcktLVWN5UXNXY1lFQ2t6V1g4ZUFFLzQ2d1F3Mnh6WEpqamdJRkxIakZsY3l6NHNCCkxjb2VjRkMwbGswMTNEdHFJdVZPQ2ptQjl2NXdlQ0REWWJhTzlqOVJRMStrZmdDQlhhYzlhMFZtWkRndnExczcKS2pCMWZiTlFnem8vc2x3Mml3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=",
+    "capture": {
+      "config": null,
+      "dns": null,
+      "monitoring": null,
+      "packets": null,
+      "tcpsessions": null,
+      "httpcoms": null
+    },
+    "creator": null,
+    "dateCreated": "2016-05-03T12:23:08.073Z",
+    "editor": null,
+    "dateModified": null,
+    "config": {
+      "version": "0.1",
+      "client": {
+        "capture": {
+          "mode": "FILE",
+          "file": "../test/test-parkeon.com2.pcap",
+          "interface": "wlan0",
+          "filter": "tcp port 80",
+          "captureBufferkB": 10
+        },
+        "packets": {
+          "sendBufferSizekB": 100,
+          "sendBufferDelay": "PT5S"
+        },
+        "dumpPackets": {
+          "dumpToFile": true,
+          "fileBufferSizekB": 1000,
+          "outputPath": "../logs"
+        },
+        "dnsCache": {
+          "trackIp": true,
+          "ttl": "PT2H",
+          "sendFullDelay": "PT15M",
+          "sendUpdateDelay": "PT20S",
+          "purgeDelay": "PT1H"
+        },
+        "tcpSessions": {
+          "track": true,
+          "sendSessionDelay": "PT5S",
+          "sessionTimeOut": "PT2M"
+        }
+      },
+      "server": {
+        "pack": {},
+        "tcpStreams": {
+          "parseHTTP": true
+        },
+        "webstreams": {}
+      },
+      "@id": "whisperer/+X7mSwxyRzqreBwXeDD9Cw==/config",
+      "creator": null,
+      "dateCreated": "2016-05-03T12:25:10.165Z",
+      "editor": null,
+      "dateModified": null
+    },
+    "version": null,
+    "_eTag": "\"5a4-Tsgt6Tu00HVCcNSdFXzUmw\"",
+    "dateUpdated": "2016-05-03T12:26:12.043Z"
+  }
+}
