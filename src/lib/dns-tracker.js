@@ -75,6 +75,8 @@ class DNSTracker {
             else{
                 items = that.dnsCache.getItems();
             }
+            that.lastSentDate = moment();
+
             debug(`${items.length} items to send.`);
             
             if(items.length){
@@ -92,6 +94,7 @@ class DNSTracker {
                     debug(res.body);
                 }
             }
+
         })();
     }
 

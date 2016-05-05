@@ -88,7 +88,7 @@ class DNSCache {
     
     purge(){
         for(let key of this.cache.keys()){
-            if(this.cache.get(key).lastSeen.isAfter(moment().subtract(this.ttl))) {
+            if(this.cache.get(key).lastSeen.isBefore(moment().subtract(this.ttl))) {
                 debug(`Removed IP ${key}, not seen since TTL: ${this.ttl.humanize()}`);
                 this.cache.delete(key);
             }
