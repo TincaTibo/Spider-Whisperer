@@ -2,13 +2,14 @@
   "_index": "whisp",
   "_type": "whisperer",
   "_id": "+X7mSwxyRzqreBwXeDD9Cw==",
-  "_version": 4,
+  "_version": 11,
   "found": true,
   "_source": {
     "@id": "+X7mSwxyRzqreBwXeDD9Cw==",
     "name": "test",
     "customer": "Spider",
     "apikey": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDdkFxZjdmOWRhRVF2amZURk8rSnJGMytCbAp6REg0U3BCMUl6TnJiRlRqcktLVWN5UXNXY1lFQ2t6V1g4ZUFFLzQ2d1F3Mnh6WEpqamdJRkxIakZsY3l6NHNCCkxjb2VjRkMwbGswMTNEdHFJdVZPQ2ptQjl2NXdlQ0REWWJhTzlqOVJRMStrZmdDQlhhYzlhMFZtWkRndnExczcKS2pCMWZiTlFnem8vc2x3Mml3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=",
+    "dns": "+X7mSwxyRzqreBwXeDD9Cw==.dns",
     "capture": {
       "config": null,
       "dns": null,
@@ -54,6 +55,10 @@
         }
       },
       "server": {
+        "dns": {
+          "ttl": "PT2H",
+          "purgeDelay": "PT1H"
+        },
         "pack": {},
         "tcpStreams": {
           "parseHTTP": true
@@ -62,12 +67,12 @@
       },
       "@id": "whisperer/+X7mSwxyRzqreBwXeDD9Cw==/config",
       "creator": null,
-      "dateCreated": "2016-05-03T12:25:10.165Z",
+      "dateCreated": "2016-05-05T21:39:51.177Z",
       "editor": null,
       "dateModified": null
     },
     "version": null,
-    "_eTag": "\"5a4-Tsgt6Tu00HVCcNSdFXzUmw\"",
+    "_eTag": "\"5f2-ov5daTR00ty71Dx2eJpjlw\"",
     "dateUpdated": "2016-05-03T12:26:12.043Z"
   }
 }

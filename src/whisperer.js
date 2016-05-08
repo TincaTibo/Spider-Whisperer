@@ -214,7 +214,9 @@ kHiWkBFWXJeF7qhmoQJAQLRKeEhBrdjHkrfAayo4IXx/1OcndFMByW160up4rgtU
         process.exit(0);
     }
 
-    startDropWatcher(pcapSession);
+    if(config.capture.mode === Config.INTERFACE) {
+        startDropWatcher(pcapSession);
+    }
     startListeners(pcapSession, config);
 })().fail(err => {
     console.error(err.stack);
